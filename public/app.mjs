@@ -1,3 +1,4 @@
+import { createMusic } from './music.mjs';
 import { character, react } from './mascot.mjs';
 import { stopScenarios, actScenarios, responses, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
@@ -11,31 +12,15 @@ const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', 
 let state = { view: 'home', game: null };
 let lastInput = performance.now(), enteredAt = performance.now(), completeTimer;
 let sound = true, audio;
-const bgm = new Audio('./assets/bgm-fekdi.mp3');
-bgm.id = 'menu-bgm';
-bgm.preload = 'auto';
-document.body.append(bgm);
-bgm.loop = true;
-bgm.volume = 0.28;
-let audioUnlocked = false;
-function syncMusic() {
-  const playing = sound && audioUnlocked && state.view === 'home' && !document.hidden;
-  if (playing) bgm.play().catch(() => { announcement.textContent = 'Sentuh tombol Musik menu untuk memutar BGM.'; });
-  else bgm.pause();
+const music = createMusic(updateMusicButton);
+function updateMusicButton() {
   const button = document.querySelector('[data-action="music"]');
-  if (button) {
-    button.textContent = !sound ? 'Musik mati · Nyalakan' : !audioUnlocked || bgm.paused ? '♫ Putar musik menu' : '♫ Musik menu aktif';
-    button.setAttribute('aria-pressed', String(playing && !bgm.paused));
-  }
+  if (!button) return;
+  const playing = sound && !music.audio.paused;
+  button.textContent = !sound ? 'Musik mati · Nyalakan' : playing ? '♫ Musik aktif' : '♫ Putar musik';
+  button.setAttribute('aria-pressed', String(playing));
 }
-bgm.addEventListener('playing', () => {
-  const button = document.querySelector('[data-action="music"]');
-  if (button) { button.textContent = '♫ Musik menu aktif'; button.setAttribute('aria-pressed', 'true'); }
-});
-function unlockMusic() { audioUnlocked = true; syncMusic(); }
-document.addEventListener('pointerdown', unlockMusic);
-document.addEventListener('keydown', unlockMusic);
-document.addEventListener('visibilitychange', syncMusic);
+function syncMusic() { music.setEnabled(sound); }
 
 
 function button(label, action, secondary = false) {
@@ -57,7 +42,7 @@ function home() {
   return `<section class="home-view"><div class="home-hero"><p class="eyebrow">SELAMAT DATANG DI TEMPAT UJI INSTING</p><h1 tabindex="-1">Hmm…<br>YAKIN <span>AMAN?</span></h1><p>Kelihatannya gampang.<br>Coba dulu, baru bilang.</p></div><div class="home-games">
   <button class="game-choice stop-choice" data-action="choose-stop"><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop', 'wave')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
   <button class="game-choice act-choice" data-action="choose-act"><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act', 'wave')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
-  </div><p class="home-invitation">TINGGAL SENTUH. GILIRAN KAMU!</p><div class="menu-extras"><button data-action="music" class="back-button">♫ Putar musik menu</button></div></section>`;
+  </div><p class="home-invitation">TINGGAL SENTUH. GILIRAN KAMU!</p><div class="menu-extras"><button data-action="music" class="back-button">♫ Putar musik</button></div></section>`;
 }
 function intro() {
   const isStop = state.game === 'stop';
@@ -141,20 +126,21 @@ function choose(game) {
 function confetti() {
   return `<div class="confetti" aria-hidden="true">${Array.from({ length: 16 }, (_, i) => `<i style="--i:${i};--x:${(i * 7 + 3) % 100}%"></i>`).join('')}</div>`;
 }
-function tone(correct, celebrate = false) {
+function tone(correct, celebrate = false, finish = false) {
   if (!sound) return;
   try {
     audio ??= new AudioContext();
     void audio.resume();
-    const notes = celebrate ? [523, 659, 784, 1047] : correct ? [660, 880] : [220, 165];
+    const notes = finish ? [523, 659, 784, 1047, 784, 1047] : celebrate ? [523, 659, 784, 1047] : correct ? [660, 880] : [220, 165];
     notes.forEach((frequency, i) => {
       const oscillator = audio.createOscillator(), gain = audio.createGain();
-      const start = audio.currentTime + i * 0.075;
+      const start = audio.currentTime + i * (finish ? 0.13 : 0.075);
+      const duration = finish && i === notes.length - 1 ? 0.55 : finish ? 0.22 : 0.15;
       oscillator.type = 'triangle'; oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(0.065, start);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
       oscillator.connect(gain); gain.connect(audio.destination);
-      oscillator.start(start); oscillator.stop(start + 0.16);
+      oscillator.start(start); oscillator.stop(start + duration + 0.01);
     });
   } catch { announcement.textContent = 'Suara tidak tersedia pada perangkat ini.'; }
 }
@@ -212,7 +198,10 @@ document.addEventListener('click', event => {
     tone(correct); render();
   }
   if (action === 'next-stop' && state.view === 'stop-play' && state.answer !== null) {
-    if (state.index === state.rounds.length - 1) state.view = 'result';
+    if (state.index === state.rounds.length - 1) {
+      state.view = 'result';
+      tone(true, true, true);
+    }
     else { state.index++; state.answer = null; }
     render();
   }
@@ -230,7 +219,6 @@ document.addEventListener('click', event => {
   if (action === 'about') document.querySelector('#about').showModal();
   if (action === 'close-dialog') document.querySelector('#about').close();
   if (action === 'music') {
-    audioUnlocked = true;
     if (!sound) document.querySelector('[data-action="sound"]').click();
     syncMusic();
   }
