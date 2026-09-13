@@ -1,3 +1,4 @@
+import { character, react } from './mascot.mjs';
 import { stopScenarios, actScenarios, responses, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
 
@@ -10,6 +11,32 @@ const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', 
 let state = { view: 'home', game: null };
 let lastInput = performance.now(), enteredAt = performance.now(), completeTimer;
 let sound = true, audio;
+const bgm = new Audio('./assets/bgm-fekdi.mp3');
+bgm.id = 'menu-bgm';
+bgm.preload = 'auto';
+document.body.append(bgm);
+bgm.loop = true;
+bgm.volume = 0.28;
+let audioUnlocked = false;
+function syncMusic() {
+  const playing = sound && audioUnlocked && state.view === 'home' && !document.hidden;
+  if (playing) bgm.play().catch(() => { announcement.textContent = 'Sentuh tombol Musik menu untuk memutar BGM.'; });
+  else bgm.pause();
+  const button = document.querySelector('[data-action="music"]');
+  if (button) {
+    button.textContent = !sound ? 'Musik mati · Nyalakan' : !audioUnlocked || bgm.paused ? '♫ Putar musik menu' : '♫ Musik menu aktif';
+    button.setAttribute('aria-pressed', String(playing && !bgm.paused));
+  }
+}
+bgm.addEventListener('playing', () => {
+  const button = document.querySelector('[data-action="music"]');
+  if (button) { button.textContent = '♫ Musik menu aktif'; button.setAttribute('aria-pressed', 'true'); }
+});
+function unlockMusic() { audioUnlocked = true; syncMusic(); }
+document.addEventListener('pointerdown', unlockMusic);
+document.addEventListener('keydown', unlockMusic);
+document.addEventListener('visibilitychange', syncMusic);
+
 
 function button(label, action, secondary = false) {
   return `<button class="button${secondary ? ' secondary' : ''}" data-action="${action}">${label}${icon('ArrowRight')}</button>`;
@@ -23,17 +50,14 @@ function footer() {
 function nav(label, extra = '') {
   return `<div class="game-nav"><button class="back-button" data-action="home">${icon('ArrowLeft')} Pilihan game</button><span class="game-name">${label}</span>${extra || `<button class="reset-button" data-action="reset" aria-label="Mulai ulang sesi">${icon('ArrowCounterClockwise')}</button>`}</div>`;
 }
-function character(kind = 'stop', mood = '') {
-  return `<span class="toon ${kind} ${mood}" aria-hidden="true"><span class="toon-arm left"></span><span class="toon-arm right"></span><span class="toon-body"><span class="toon-eyes"><i></i><i></i></span><span class="toon-mouth"></span></span><span class="toon-foot left"></span><span class="toon-foot right"></span></span>`;
-}
 function host(line, mood = '') {
   return `<div class="host-line">${character(state.game === 'act' ? 'act' : 'stop', mood)}<p>${line}</p></div>`;
 }
 function home() {
   return `<section class="home-view"><div class="home-hero"><p class="eyebrow">SELAMAT DATANG DI TEMPAT UJI INSTING</p><h1 tabindex="-1">Hmm…<br>YAKIN <span>AMAN?</span></h1><p>Kelihatannya gampang.<br>Coba dulu, baru bilang.</p></div><div class="home-games">
-  <button class="game-choice stop-choice" data-action="choose-stop"><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
-  <button class="game-choice act-choice" data-action="choose-act"><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
-  </div><p class="home-invitation">TINGGAL SENTUH. GILIRAN KAMU!</p></section>`;
+  <button class="game-choice stop-choice" data-action="choose-stop"><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop', 'wave')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
+  <button class="game-choice act-choice" data-action="choose-act"><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act', 'wave')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
+  </div><p class="home-invitation">TINGGAL SENTUH. GILIRAN KAMU!</p><div class="menu-extras"><button data-action="music" class="back-button">♫ Putar musik menu</button></div></section>`;
 }
 function intro() {
   const isStop = state.game === 'stop';
@@ -46,7 +70,7 @@ function stopPlay() {
   const s = state.rounds[state.index];
   const answered = state.answer !== null;
   const correct = state.answer === s.answer;
-  return `${nav('STOP OR GO DECISION', `<span class="round-count">TEPAT <b>${state.correct}</b> / ${state.rounds.length}</span>`)}<div class="round-track" aria-label="Progres situasi">${state.rounds.map((_, i) => `<span class="${i < state.index ? 'done' : i === state.index ? 'current' : ''}">${i < state.index ? icon('Check') : i + 1}</span>`).join('')}</div><section class="decision-view ${answered ? 'revealed' : 'asking'}">${host(answered ? (correct ? 'Nah, kamu jeli!' : 'Ups. Kita cek bareng, yuk.') : ['Ada yang mau bilang sesuatu…', 'Oke, coba yang ini.', 'Jangan keburu yakin, ya.', 'Instingmu masih nyala?', 'Terakhir. Baca baik-baik!'][state.index], answered ? (correct ? 'happy' : 'surprised') : '')}${caseCard(s)}<div class="decision-copy"><p class="eyebrow">${answered ? 'BEKAL RONDE BERIKUTNYA' : `RONDE ${state.index + 1} • APA KEPUTUSANMU?`}</p><h1 tabindex="-1">${escape(answered ? (correct ? 'NAH, BETUL!' : 'EH, TUNGGU…') : s.title)}</h1>${answered ? `<div class="round-reaction ${correct ? 'hit' : 'miss'}">${correct ? '+1 KEPUTUSAN TEPAT' : 'YUK, KENALI TANDA-TANDANYA'}</div><div class="decision-verdict ${s.answer}">${icon(s.answer === 'stop' ? 'HandPalm' : 'CheckCircle')}<span>Keputusan yang tepat: <b>${s.answer === 'stop' ? 'STOP' : 'LANJUT'}</b></span></div><p class="reason">${escape(s.reason)}</p><div class="learning-point"><b>${s.answer === 'stop' ? 'Tanda bahaya' : 'Yang sudah diperiksa'}</b><p>${escape(s.checkpoint)}</p></div><div class="learning-point"><b>Langkah aman</b><p>${escape(s.action)}</p></div>${button(state.index === state.rounds.length - 1 ? 'Lihat hasilku' : 'RONDE BERIKUTNYA', 'next-stop')}` : `<p class="lead">${escape(s.question)}</p><div class="decision-buttons"><button class="decision stop" data-action="answer" data-value="stop">${icon('HandPalm')}<b>STOP</b><span>Ada yang janggal!</span></button><button class="decision go" data-action="answer" data-value="go">${icon('ArrowRight')}<b>LANJUT</b><span>Aman? Gas!</span></button></div><p class="decision-hint">Bukan soal cepat. Yang penting, tepat.</p>`}</div></section>`;
+  return `${nav('STOP OR GO DECISION', `<span class="round-count">TEPAT <b>${state.correct}</b> / ${state.rounds.length}</span>`)}<div class="round-track" aria-label="Progres situasi">${state.rounds.map((_, i) => `<span class="${i < state.index ? 'done' : i === state.index ? 'current' : ''}">${i < state.index ? icon('Check') : i + 1}</span>`).join('')}</div><section class="decision-view ${answered ? 'revealed' : 'asking'}">${host(answered ? (correct ? 'Nah, kamu jeli!' : 'Ups. Kita cek bareng, yuk.') : ['Ada yang mau bilang sesuatu…', 'Oke, coba yang ini.', 'Jangan keburu yakin, ya.', 'Instingmu masih nyala?', 'Terakhir. Baca baik-baik!'][state.index], answered ? (correct ? 'happy' : 'oops') : 'thinking')}${caseCard(s)}<div class="decision-copy"><p class="eyebrow">${answered ? 'BEKAL RONDE BERIKUTNYA' : `RONDE ${state.index + 1} • APA KEPUTUSANMU?`}</p><h1 tabindex="-1">${escape(answered ? (correct ? 'NAH, BETUL!' : 'EH, TUNGGU…') : s.title)}</h1>${answered ? `<div class="round-reaction ${correct ? 'hit' : 'miss'}">${correct ? '+1 KEPUTUSAN TEPAT' : 'YUK, KENALI TANDA-TANDANYA'}</div><div class="decision-verdict ${s.answer}">${icon(s.answer === 'stop' ? 'HandPalm' : 'CheckCircle')}<span>Keputusan yang tepat: <b>${s.answer === 'stop' ? 'STOP' : 'LANJUT'}</b></span></div><p class="reason">${escape(s.reason)}</p><div class="learning-point"><b>${s.answer === 'stop' ? 'Tanda bahaya' : 'Yang sudah diperiksa'}</b><p>${escape(s.checkpoint)}</p></div><div class="learning-point"><b>Langkah aman</b><p>${escape(s.action)}</p></div>${button(state.index === state.rounds.length - 1 ? 'Lihat hasilku' : 'RONDE BERIKUTNYA', 'next-stop')}` : `<p class="lead">${escape(s.question)}</p><div class="decision-buttons"><button class="decision stop" data-action="answer" data-value="stop">${icon('HandPalm')}<b>STOP</b><span>Ada yang janggal!</span></button><button class="decision go" data-action="answer" data-value="go">${icon('ArrowRight')}<b>LANJUT</b><span>Aman? Gas!</span></button></div><p class="decision-hint">Bukan soal cepat. Yang penting, tepat.</p>`}</div></section>`;
 }
 function actScenario() {
   const s = state.scenario;
@@ -54,28 +78,52 @@ function actScenario() {
 }
 function actPlay() {
   const s = state.scenario;
-  return `${nav('ACT FAST CHALLENGE')}<section class="response-view"><aside class="response-context"><span class="incident-small">${icon(s.icon)}</span><h1 tabindex="-1">${escape(s.title)}</h1><p>${escape(s.text)}</p><div class="timer-panel"><span>${icon('Timer')} WAKTU BERJALAN</span><div><b id="timer">0.0</b><span>detik</span></div><small>Tanpa batas waktu. Tetap jeli!</small></div></aside><div class="response-main"><div class="response-heading">${host('Oke, bantu aku beresin ini!')}<h2>LANGKAH KAMU?</h2><p>Pilih semua tindakan yang diperlukan dalam situasi ini.</p></div><div class="power-cells" aria-hidden="true">${s.required.map(() => '<span></span>').join('')}</div><div class="response-progress"><span id="progress">0 dari ${s.required.length} tindakan tepat ditemukan</span><span id="wrong-count">0 salah</span></div><div class="response-grid">${state.responseOrder.map(id => { const r = responses.find(r => r.id === id); return `<button class="response-tile" data-action="respond" data-value="${r.id}"><span class="tile-icon">${icon(r.icon)}</span><b>${r.label}</b><span class="tile-state">PILIH AKSI INI</span><span class="tile-mark"></span></button>`; }).join('')}</div><p id="response-feedback" class="response-feedback" role="status">Ada ${s.required.length} tindakan tepat. Temukan semuanya.</p></div></section>`;
+  return `${nav('ACT FAST CHALLENGE')}<section class="response-view"><aside class="response-context"><span class="incident-small">${icon(s.icon)}</span><h1 tabindex="-1">${escape(s.title)}</h1><p>${escape(s.text)}</p><div class="timer-panel"><span>${icon('Timer')} WAKTU BERJALAN</span><div><b id="timer">0.0</b><span>detik</span></div><small>Tanpa batas waktu. Tetap jeli!</small></div></aside><div class="response-main"><div class="response-heading">${host('Oke, bantu aku beresin ini!', 'thinking')}<h2>LANGKAH KAMU?</h2><p>Pilih semua tindakan yang diperlukan dalam situasi ini.</p></div><div class="power-cells" aria-hidden="true">${s.required.map(() => '<span></span>').join('')}</div><div class="response-progress"><span id="progress">0 dari ${s.required.length} tindakan tepat ditemukan</span><span id="wrong-count">0 salah</span></div><div class="response-grid">${state.responseOrder.map(id => { const r = responses.find(r => r.id === id); return `<button class="response-tile" data-action="respond" data-value="${r.id}"><span class="tile-icon">${icon(r.icon)}</span><b>${r.label}</b><span class="tile-state">PILIH AKSI INI</span><span class="tile-mark"></span></button>`; }).join('')}</div><p id="response-feedback" class="response-feedback" role="status">Ada ${s.required.length} tindakan tepat. Temukan semuanya.</p></div></section>`;
 }
 function completion() {
-  return `<section class="completion-view">${confetti()}<div class="completion-seal">${icon('Check')}</div><p class="eyebrow">SEMUA TINDAKAN TEPAT DITEMUKAN</p><h1 tabindex="-1">MISSION<br><span>COMPLETE!</span></h1><p>Waktu berhenti di <b>${formatTime(state.elapsed)} detik</b>.</p></section>`;
+  return `<section class="completion-view">${confetti()}<div class="finish-mascot">${character('act', 'celebrate')}</div><div class="completion-seal">${icon('Check')}</div><p class="eyebrow">SEMUA TINDAKAN TEPAT DITEMUKAN</p><h1 tabindex="-1">MISSION<br><span>COMPLETE!</span></h1><p>Waktu berhenti di <b>${formatTime(state.elapsed)} detik</b>.</p></section>`;
 }
 function result() {
   const isStop = state.game === 'stop';
   const stats = isStop ? null : assess(state.scenario.required, state.chosen);
   const score = isStop ? null : scoreAct(state.elapsed, stats.wrong, state.scenario.targetTime);
-  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="result-view">${confetti()}<div class="result-heading"><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI</p><h1 tabindex="-1">${isStop ? 'RONDE<br><span>SELESAI!</span>' : 'AKSI<br><span>TUNTAS!</span>'}</h1><p>${isStop ? 'Setiap keputusan adalah kesempatan untuk belajar.' : 'Kamu menemukan semua tindakan yang diperlukan.'}</p></div><div class="result-details">${isStop ? `<div class="stop-score"><strong>${state.correct}<span> / ${state.rounds.length}</span></strong><p>keputusan tepat</p></div><div class="learning-point"><b>Ingat sebelum bertindak</b><p>Periksa identitas, penerima, nominal, dan tujuan. Jika ada yang meragukan, berhenti dan verifikasi melalui kanal resmi.</p></div>${button('Selesai', 'home')}` : `<div class="badge-label">${icon('Trophy')}${score.badge}</div><div class="result-stats"><div><span>BENAR</span><b>${stats.correct}<small> / ${state.scenario.required.length}</small></b></div><div><span>SALAH</span><b>${stats.wrong}</b></div><div><span>WAKTU</span><b>${formatTime(state.elapsed)}<small> dtk</small></b></div><div class="score-stat"><span>SKOR</span><b>${score.score}</b></div></div><p class="score-note">700 poin selesai + ${score.bonus} bonus waktu − ${stats.wrong * 75} poin pilihan salah.</p>${button('Lihat penjelasan', 'debrief')}`}<p class="auto-reset">${isStop ? 'Kembali ke awal' : 'Lihat penjelasan'} dalam <span id="reset-count">45</span> detik.</p></div></section>`;
+  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="result-view">${confetti()}<div class="result-heading"><div class="finish-mascot">${character(state.game, isStop && state.correct < 3 ? 'encourage' : 'celebrate')}</div><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI</p><h1 tabindex="-1">${isStop ? 'RONDE<br><span>SELESAI!</span>' : 'AKSI<br><span>TUNTAS!</span>'}</h1><p>${isStop ? 'Setiap keputusan adalah kesempatan untuk belajar.' : 'Kamu menemukan semua tindakan yang diperlukan.'}</p></div><div class="result-details">${isStop ? `<div class="stop-score"><strong>${state.correct}<span> / ${state.rounds.length}</span></strong><p>keputusan tepat</p></div><div class="learning-point"><b>Ingat sebelum bertindak</b><p>Periksa identitas, penerima, nominal, dan tujuan. Jika ada yang meragukan, berhenti dan verifikasi melalui kanal resmi.</p></div>${button('Selesai', 'home')}` : `<div class="badge-label">${icon('Trophy')}${score.badge}</div><div class="result-stats"><div><span>BENAR</span><b>${stats.correct}<small> / ${state.scenario.required.length}</small></b></div><div><span>SALAH</span><b>${stats.wrong}</b></div><div><span>WAKTU</span><b>${formatTime(state.elapsed)}<small> dtk</small></b></div><div class="score-stat"><span>SKOR</span><b>${score.score}</b></div></div><p class="score-note">700 poin selesai + ${score.bonus} bonus waktu − ${stats.wrong * 75} poin pilihan salah.</p>${button('Lihat penjelasan', 'debrief')}`}<p class="auto-reset">${isStop ? 'Kembali ke awal' : 'Lihat penjelasan'} dalam <span id="reset-count">45</span> detik.</p></div></section>`;
 }
 function debrief() {
   const s = state.scenario;
   return `${nav('ACT FAST CHALLENGE')}<section class="debrief-view"><div class="debrief-heading"><p class="eyebrow">BEKAL UNTUK DUNIA NYATA</p><h1 tabindex="-1">BAWA PULANG<br><span>ILMUNYA!</span></h1><p class="lead">${escape(s.explanation)}</p></div><div class="action-recap">${s.required.map(id => {const r = responses.find(r => r.id === id); return `<div>${icon(r.icon)}<section><h2>${r.label}</h2><p>${r.detail}</p></section>${icon('CheckCircle')}</div>`;}).join('')}</div><div class="debrief-end"><p>Kalau ragu, STOP dulu.<br><b>Kalau sudah terjadi, bertindak tepat.</b></p><button id="finish" class="button" data-action="home" disabled>Selesai <span id="debrief-count">(5)</span>${icon('ArrowRight')}</button></div><p class="auto-reset">Kembali ke awal dalam <span id="reset-count">45</span> detik.</p></section>`;
 }
+let introTimers = [];
+function animateIntro() {
+  const guide = screen.querySelector('.intro-guide');
+  if (!guide || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const rows = [...guide.querySelectorAll('li')];
+  const mascot = guide.querySelector('.toon');
+  guide.classList.add('intro-sequence');
+  react(mascot, 'wave');
+  ['thinking', 'encourage', 'happy'].forEach((mood, index) => {
+    introTimers.push(setTimeout(() => {
+      rows.forEach(row => row.classList.remove('step-active'));
+      rows[index].classList.add('step-visible', 'step-active');
+      react(mascot, mood);
+    }, 1500 + index * 1800));
+  });
+  introTimers.push(setTimeout(() => {
+    react(mascot, 'idle');
+    rows.forEach(row => row.classList.remove('step-active'));
+  }, 8100));
+}
 function render() {
+  introTimers.forEach(clearTimeout);
+  introTimers = [];
   const views = { home, intro, 'stop-play': stopPlay, 'act-scenario': actScenario, 'act-play': actPlay, completion, result, debrief };
   screen.innerHTML = header() + views[state.view]() + footer();
   screen.dataset.view = state.view;
   screen.dataset.game = state.game || 'home';
   screen.querySelector('h1')?.focus({ preventScroll: true });
   enteredAt = performance.now();
+  syncMusic();
+  if (state.view === 'intro') animateIntro();
 }
 function goHome() {
   clearTimeout(completeTimer);
@@ -130,7 +178,7 @@ function respond(id, tile) {
   setTimeout(() => popup.remove(), 800);
   const hostLine = document.querySelector('.host-line p');
   if (hostLine) hostLine.textContent = correct ? (stats.complete ? 'Beres! Kamu tahu harus apa.' : `Sip! Masih ada ${state.scenario.required.length - stats.correct} lagi.`) : 'Waduh, coba langkah lain.';
-  document.querySelector('.host-line .toon')?.classList.toggle('surprised', !correct);
+  react(document.querySelector('.host-line .toon'), correct ? 'happy' : 'oops');
   tone(correct);
   if (stats.complete) {
     state.elapsed = performance.now() - state.started;
@@ -181,10 +229,15 @@ document.addEventListener('click', event => {
   }
   if (action === 'about') document.querySelector('#about').showModal();
   if (action === 'close-dialog') document.querySelector('#about').close();
+  if (action === 'music') {
+    audioUnlocked = true;
+    if (!sound) document.querySelector('[data-action="sound"]').click();
+    syncMusic();
+  }
   if (action === 'sound') {
     sound = !sound; target.setAttribute('aria-pressed', String(sound));
     target.setAttribute('aria-label', sound ? 'Matikan suara' : 'Nyalakan suara');
-    target.innerHTML = icon(sound ? 'SpeakerHigh' : 'SpeakerSlash'); tone(true);
+    target.innerHTML = icon(sound ? 'SpeakerHigh' : 'SpeakerSlash'); tone(true); syncMusic();
   }
   if (action === 'fullscreen') {
     const promise = document.fullscreenElement ? document.exitFullscreen() : kiosk.requestFullscreen?.();

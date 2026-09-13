@@ -38,3 +38,9 @@ Uji keterbacaan dan jangkauan sentuh di perangkat asli, konfirmasi copy dengan p
 ## Deploy ke Vercel
 
 Impor repository ini dari GitHub. Gunakan root repository, preset Other, build command `npm test`, dan output directory `public`. Pengaturan tersedia di `vercel.json`. Tidak perlu environment variable atau database.
+
+## Musik dan animasi maskot
+
+BGM `assets/bgm-fekdi.mp3` diputar berulang pada volume 28% hanya di main menu setelah interaksi pertama. Musik berhenti saat masuk game atau tab tersembunyi; tombol suara mengatur BGM dan efek suara.
+
+Tujuh animasi maskot tersedia: santai, menyapa, berpikir, benar, salah, semangat, dan selebrasi. Intro menyapa selama 1,5 detik, lalu menampilkan langkah 01–03 bertahap dengan perubahan ekspresi. Maskot kembali idle tiga detik setelah langkah 03. Komponen bersama ada di `mascot.mjs`. Stop or Go dan Act Fast menggunakan reaksi jawaban, dan hasil sesi menggunakan selebrasi atau semangat.
