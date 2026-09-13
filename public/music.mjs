@@ -1,6 +1,6 @@
 // One audio instance per document; game screen changes never restart the track.
 export function createMusic(onChange = () => {}) {
-  const audio = new Audio('./assets/bgm-fekdi.mp3');
+  const audio = new Audio('./assets/bgm-fekdi.mp3?v=6f9757cadf1c');
   audio.id = 'menu-bgm';
   audio.preload = 'auto';
   audio.autoplay = true;
