@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#101b59">
+  <meta name="description" content="Trial dua game edukasi Pelindungan Konsumen untuk booth FEKDI 2026.">
+  <title>FEKDI 2026 | Stop or Go & Act Fast</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="./assets/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./style.css?v=party-3">
+  <script type="module" src="./app.mjs?v=party-3"></script>
+</head>
+<body>
+  <main id="kiosk" class="kiosk" aria-label="Game edukasi FEKDI 2026">
+    <div id="screen"></div>
+  </main>
+  <div id="announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <nav class="preview-bar" aria-label="Pengaturan preview">
+    <span class="preview-label"><b>FEKDI 2026</b><span>Party game • Sentuh & main</span></span>
+    <div class="preview-actions">
+      <button data-action="layout" data-value="auto" aria-pressed="true">Otomatis</button>
+      <button data-action="layout" data-value="portrait" aria-pressed="false">Portrait</button>
+      <button data-action="sound" aria-label="Matikan suara" aria-pressed="true"><svg><use href="./assets/icons.svg#SpeakerHigh"></use></svg></button>
+      <button data-action="fullscreen" aria-label="Layar penuh"><svg><use href="./assets/icons.svg#ArrowsOut"></use></svg></button>
+      <button data-action="about" aria-label="Tentang konsep"><svg><use href="./assets/icons.svg#Info"></use></svg></button>
+    </div>
+  </nav>
+  <dialog id="about"><button class="dialog-close" data-action="close-dialog" aria-label="Tutup">×</button>
+    <p class="eyebrow">ARAH DESAIN RAFAEL</p><h2>Bukan cuma baca.<br>Ikut main!</h2>
+    <p>Arah party game mengikuti referensi Jackbox: karakter kartun orisinal, kartu situasi, transisi lentur, dan respons langsung saat memilih. Biru tetap menjadi penghubung dengan booth. Struktur dua game tetap mengikuti brief.</p>
+    <h3>Dua pengalaman yang berbeda</h3><p><b>Stop or Go:</b> kenali tanda bahaya sebelum mengambil keputusan. <b>Act Fast:</b> temukan tindakan tepat setelah insiden terjadi.</p>
+    <h3>Yang bisa dicoba</h3><p>15 skenario Stop or Go (5 per sesi), 10 skenario Act Fast (1 per sesi), feedback, penilaian, penjelasan, reset otomatis, dan tampilan adaptif. Semua konten dan aset disajikan lokal tanpa API, akun, atau pengumpulan data pengunjung.</p>
+    <p class="note">Trial untuk meninjau desain dan alur. Belum build kiosk produksi. Resolusi layar, wording, dan target waktu masih perlu diuji di booth. Coba pada layar landscape maupun portrait. Tekan Esc untuk memulai ulang sesi.</p>
+  </dialog>
+  <dialog id="reset-dialog"><h2>Mulai ulang?</h2><p>Progres sesi ini akan dihapus.</p><div class="dialog-actions"><button class="button secondary" data-action="cancel-reset">Lanjut bermain</button><button class="button" data-action="confirm-reset">Mulai ulang</button></div></dialog>
+  <noscript>Aktifkan JavaScript untuk mencoba game ini.</noscript>
+</body>
+</html>
