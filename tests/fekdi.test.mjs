@@ -2,6 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { stopScenarios, actScenarios, responses } from '../public/content.mjs';
 import { shuffle, makeBag, assess, scoreAct } from '../public/engine.mjs';
+import { audioSettings, gameTrack, musicSources } from '../public/audio.mjs';
+
+test('lobby and in-game audio have distinct, audible sources', () => {
+  assert.ok(audioSettings.lobbyMusicVolume > 0.28);
+  assert.ok(audioSettings.musicVolume >= 0.5);
+  assert.ok(audioSettings.effectsVolume > audioSettings.musicVolume);
+  assert.notEqual(musicSources.lobby, musicSources.game);
+  assert.equal(gameTrack.bpm, 132);
+  assert.equal(gameTrack.melody.length, gameTrack.bass.length);
+});
 
 test('FEKDI revision 2 content, scoring, unique attempts, and 200-session distribution', () => {
   assert.equal(stopScenarios.length, 15);

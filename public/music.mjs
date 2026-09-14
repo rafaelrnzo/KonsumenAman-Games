@@ -1,11 +1,13 @@
-// One audio instance per document; game screen changes never restart the track.
+import { audioSettings } from './audio.mjs';
+
+// Keep one lobby audio instance so returning home resumes instead of restarting it.
 export function createMusic(onChange = () => {}) {
   const audio = new Audio('./assets/bgm-fekdi.mp3?v=6f9757cadf1c');
   audio.id = 'menu-bgm';
   audio.preload = 'auto';
   audio.autoplay = true;
   audio.loop = true;
-  audio.volume = 0.28;
+  audio.volume = audioSettings.lobbyMusicVolume;
   document.body.append(audio);
   let enabled = true;
   function sync() {

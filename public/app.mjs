@@ -1,7 +1,8 @@
-import { createMusic } from './music.mjs?v=6f9757cadf1c';
+import { createMusic } from './music.mjs?v=audio-8';
 import { character, react } from './mascot.mjs';
 import { stopScenarios, actScenarios, responses, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
+import { gameAudio } from './audio.mjs';
 
 const screen = document.querySelector('#screen');
 const kiosk = document.querySelector('#kiosk');
@@ -11,7 +12,7 @@ const icon = name => `<svg aria-hidden="true"><use href="./assets/icons.svg#${na
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let state = { view: 'home', game: null };
 let lastInput = performance.now(), enteredAt = performance.now(), completeTimer;
-let sound = true, audio;
+let sound = true;
 const music = createMusic(updateMusicButton);
 function updateMusicButton() {
   const button = document.querySelector('[data-action="music"]');
@@ -20,8 +21,12 @@ function updateMusicButton() {
   button.textContent = !sound ? 'Musik mati · Nyalakan' : playing ? '♫ Musik aktif' : '♫ Putar musik';
   button.setAttribute('aria-pressed', String(playing));
 }
-function syncMusic() { music.setEnabled(sound); }
-
+function syncMusic() {
+  const inGame = state.view !== 'home';
+  music.setEnabled(sound && !inGame);
+  gameAudio.setEnabled(sound);
+  gameAudio.setMusicEnabled(sound && inGame && !document.hidden);
+}
 
 function button(label, action, secondary = false) {
   return `<button class="button${secondary ? ' secondary' : ''}" data-action="${action}">${label}${icon('ArrowRight')}</button>`;
@@ -143,21 +148,7 @@ function confetti() {
 }
 function tone(correct, celebrate = false, finish = false) {
   if (!sound) return;
-  try {
-    audio ??= new AudioContext();
-    void audio.resume();
-    const notes = finish ? [523, 659, 784, 1047, 784, 1047] : celebrate ? [523, 659, 784, 1047] : correct ? [660, 880] : [220, 165];
-    notes.forEach((frequency, i) => {
-      const oscillator = audio.createOscillator(), gain = audio.createGain();
-      const start = audio.currentTime + i * (finish ? 0.13 : 0.075);
-      const duration = finish && i === notes.length - 1 ? 0.55 : finish ? 0.22 : 0.15;
-      oscillator.type = 'triangle'; oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.065, start);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
-      oscillator.connect(gain); gain.connect(audio.destination);
-      oscillator.start(start); oscillator.stop(start + duration + 0.01);
-    });
-  } catch { announcement.textContent = 'Suara tidak tersedia pada perangkat ini.'; }
+  if (!gameAudio.feedback(correct, celebrate, finish)) announcement.textContent = 'Suara tidak tersedia pada perangkat ini.';
 }
 function respond(id, tile) {
   if (state.view !== 'act-play' || state.chosen.includes(id) || !responses.some(r => r.id === id)) return;
@@ -225,7 +216,7 @@ document.addEventListener('click', event => {
   if (action === 'ready' && state.view === 'act-scenario') {
     // Distribute actions across the grid; keep this order stable between cases.
     state.responseOrder = ['R1', 'R5', 'R6', 'R3', 'R7', 'R2', 'R4', 'R8'];
-    state.chosen = []; state.view = 'act-play'; render(); state.started = performance.now();
+    state.chosen = []; state.view = 'act-play'; tone(true); render(); state.started = performance.now();
   }
   if (action === 'respond') respond(value, target);
   if (action === 'debrief' && state.view === 'result') { state.view = 'debrief'; render(); }
@@ -242,14 +233,17 @@ document.addEventListener('click', event => {
   if (action === 'sound') {
     sound = !sound; target.setAttribute('aria-pressed', String(sound));
     target.setAttribute('aria-label', sound ? 'Matikan suara' : 'Nyalakan suara');
-    target.innerHTML = icon(sound ? 'SpeakerHigh' : 'SpeakerSlash'); tone(true); syncMusic();
+    target.innerHTML = icon(sound ? 'SpeakerHigh' : 'SpeakerSlash');
+    syncMusic();
+    if (sound) tone(true);
   }
   if (action === 'fullscreen') {
     const promise = document.fullscreenElement ? document.exitFullscreen() : kiosk.requestFullscreen?.();
     promise?.catch(() => { announcement.textContent = 'Layar penuh tidak tersedia. Gunakan pengaturan layar penuh browser.'; });
   }
 });
-document.addEventListener('pointerdown', () => { lastInput = performance.now(); });
+document.addEventListener('pointerdown', () => { lastInput = performance.now(); gameAudio.unlock(); });
+document.addEventListener('visibilitychange', syncMusic);
 document.addEventListener('keydown', event => {
   lastInput = performance.now();
   if (event.key === 'Escape' && !document.querySelector('dialog[open]') && state.view !== 'home') document.querySelector('#reset-dialog').showModal();

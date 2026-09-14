@@ -13,6 +13,7 @@ Mode Otomatis mengikuti lebar layar. Tombol Portrait mempersempit preview di des
 ## Konten dan aturan
 
 - `content.mjs`: 15 situasi Stop or Go, 10 kasus Act Fast, delapan tindakan, penjelasan, dan pengaturan waktu.
+- `audio.mjs`: BGM in-game sintetis dan efek suara benar, buzzer salah, serta kemenangan.
 - `engine.mjs`: pengacakan, penghitungan pilihan unik, dan skor.
 - `app.mjs`: alur layar, input, timer, dan reset.
 - `style.css`: layout adaptif dan visual.
@@ -41,6 +42,6 @@ Impor repository ini dari GitHub. Gunakan root repository, preset Other, build c
 
 ## Musik dan animasi maskot
 
-BGM `assets/bgm-fekdi.mp3` diputar berulang pada volume 28% di seluruh layar game. Autoplay dicoba saat halaman dibuka; jika diblokir browser, interaksi pertama memulai musik. Pergantian layar game tidak menghentikan atau mengulang musik. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
+BGM lobby `assets/bgm-fekdi.mp3` diputar berulang pada volume 36%. Setelah pemain memilih game, musik berpindah ke aransemen sintetis yang lebih cepat agar suasana permainan berbeda dari lobby. Autoplay dicoba saat halaman dibuka; jika diblokir browser, interaksi pertama memulai musik. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
 
 Tujuh animasi maskot tersedia: santai, menyapa, berpikir, benar, salah, semangat, dan selebrasi. Intro menyapa selama 0,4 detik, lalu menampilkan langkah 01–03 berselang 0,8 detik dengan perubahan ekspresi. Maskot kembali idle 1,2 detik setelah langkah 03. Komponen bersama ada di `mascot.mjs`. Stop or Go dan Act Fast menggunakan reaksi jawaban, dan hasil sesi menggunakan selebrasi atau semangat.
