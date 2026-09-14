@@ -51,7 +51,7 @@ function home() {
 }
 function intro() {
   const isStop = state.game === 'stop';
-  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="intro-view"><div class="intro-copy"><p class="eyebrow">${isStop ? 'STOP OR GO • 5 RONDE' : 'ACT FAST • 1 INSIDEN'}</p><h1 tabindex="-1">${isStop ? 'GAS ATAU<br><span>REM DULU?</span>' : 'PANIK?<br><span>NANTI DULU.</span>'}</h1><p class="lead">${isStop ? 'Tidak semua situasi berbahaya. Bisakah kamu membedakan kapan harus berhenti dan kapan aman melanjutkan?' : 'Saat insiden sudah terjadi, satu tindakan belum tentu cukup. Temukan semua langkah yang tepat.'}</p>${button(isStop ? 'AYO MAIN!' : 'SIAP, LIHAT KASUS!' , 'start')}</div><div class="intro-guide"><div class="intro-cast">${character(isStop ? 'stop' : 'act')}</div><ol><li><span>01</span><div><b>Baca situasinya</b><p>${isStop ? 'Hadapi 5 situasi sehari-hari.' : 'Satu insiden dipilih secara acak.'}</p></div></li><li><span>02</span><div><b>${isStop ? 'Pilih STOP atau LANJUT' : 'Temukan 3–4 tindakan tepat'}</b><p>${isStop ? 'Putuskan setelah memeriksa detailnya.' : 'Pilih dari 8 respons. Pilihan salah dicatat.'}</p></div></li><li><span>03</span><div><b>${isStop ? 'Pahami alasannya' : 'Selesaikan dengan tenang'}</b><p>${isStop ? 'Pelajari langkah aman setelah menjawab.' : 'Waktu dihitung naik, bukan batas waktu.'}</p></div></li></ol></div></section>`;
+  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="intro-view"><div class="intro-copy"><p class="eyebrow">${isStop ? 'STOP OR GO • 5 RONDE' : 'ACT FAST • 1 INSIDEN'}</p><h1 tabindex="-1">${isStop ? 'GAS ATAU<br><span>REM DULU?</span>' : 'PANIK?<br><span>NANTI DULU.</span>'}</h1><p class="lead">${isStop ? 'Tidak semua situasi berbahaya. Bisakah kamu membedakan kapan harus berhenti dan kapan aman melanjutkan?' : 'Saat insiden sudah terjadi, satu tindakan belum tentu cukup. Temukan semua langkah yang tepat.'}</p>${button(isStop ? 'AYO MAIN!' : 'SIAP, LIHAT KASUS!' , 'start')}</div><div class="intro-guide"><div class="intro-cast">${character(isStop ? 'stop' : 'act')}</div><ol><li><span>01</span><div><b>Baca situasinya</b><p>${isStop ? 'Hadapi 5 situasi sehari-hari.' : 'Satu insiden dipilih secara acak.'}</p></div></li><li><span>02</span><div><b>${isStop ? 'Pilih STOP atau LANJUT' : 'Temukan 3-4 tindakan tepat'}</b><p>${isStop ? 'Putuskan setelah memeriksa detailnya.' : 'Pilih dari 8 respons. Pilihan salah dicatat.'}</p></div></li><li><span>03</span><div><b>${isStop ? 'Pahami alasannya' : 'Selesaikan dengan tenang'}</b><p>${isStop ? 'Pelajari langkah aman setelah menjawab.' : 'Waktu dihitung naik, bukan batas waktu.'}</p></div></li></ol></div></section>`;
 }
 function caseCard(s) {
   return `<div class="case-card"><div class="case-channel">${icon(s.icon)}<span>${escape(s.channel)}</span></div><div class="case-sender"><span class="sender-icon">${icon(s.icon)}</span><div><b>${escape(s.sender)}</b><span>Situasi simulasi</span></div></div><blockquote>${escape(s.message)}</blockquote><div class="case-bottom"><span>${icon('Info')} Perhatikan detail sebelum memilih</span></div></div>`;
@@ -125,6 +125,8 @@ function render() {
   screen.innerHTML = header() + views[state.view]() + footer();
   screen.dataset.view = state.view;
   screen.dataset.game = state.game || 'home';
+  window.scrollTo(0, 0);
+  kiosk.scrollTop = 0;
   screen.querySelector('h1')?.focus({ preventScroll: true });
   enteredAt = performance.now();
   syncMusic();
