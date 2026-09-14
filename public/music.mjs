@@ -1,4 +1,4 @@
-import { audioSettings } from './audio.mjs';
+import { audioSettings } from './audio.mjs?v=audio-9';
 
 // Keep one lobby audio instance so returning home resumes instead of restarting it.
 export function createMusic(onChange = () => {}) {
