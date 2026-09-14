@@ -51,11 +51,25 @@ function intro() {
 function caseCard(s) {
   return `<div class="case-card"><div class="case-channel">${icon(s.icon)}<span>${escape(s.channel)}</span></div><div class="case-sender"><span class="sender-icon">${icon(s.icon)}</span><div><b>${escape(s.sender)}</b><span>Situasi simulasi</span></div></div><blockquote>${escape(s.message)}</blockquote><div class="case-bottom"><span>${icon('Info')} Perhatikan detail sebelum memilih</span></div></div>`;
 }
+function stopFeedback(s, correct) {
+  return `<dialog id="answer-feedback" class="answer-feedback" aria-labelledby="feedback-title"><button class="feedback-close" data-action="close-feedback" aria-label="Kembali ke situasi">×</button><div class="feedback-scroll"><div class="feedback-mascot">${character('stop', correct ? 'happy' : 'oops')}</div><p class="eyebrow">${correct ? 'JAWABAN BENAR' : 'JAWABAN BELUM TEPAT'}</p><h2 id="feedback-title" tabindex="-1">${correct ? 'NAH, BETUL!' : 'EH, TUNGGU…'}</h2><div class="round-reaction ${correct ? 'hit' : 'miss'}">${correct ? '+1 KEPUTUSAN TEPAT' : 'YUK, KENALI TANDA-TANDANYA'}</div><div class="decision-verdict ${s.answer}">${icon(s.answer === 'stop' ? 'HandPalm' : 'CheckCircle')}<span>Keputusan yang tepat: <b>${s.answer === 'stop' ? 'STOP' : 'LANJUT'}</b></span></div><p class="reason">${escape(s.reason)}</p><div class="learning-point"><b>${s.answer === 'stop' ? 'Tanda bahaya' : 'Yang sudah diperiksa'}</b><p>${escape(s.checkpoint)}</p></div><div class="learning-point"><b>Langkah aman</b><p>${escape(s.action)}</p></div>${button(state.index === state.rounds.length - 1 ? 'Lihat hasilku' : 'RONDE BERIKUTNYA', 'next-stop')}</div></dialog>`;
+}
 function stopPlay() {
   const s = state.rounds[state.index];
   const answered = state.answer !== null;
   const correct = state.answer === s.answer;
-  return `${nav('STOP OR GO DECISION', `<span class="round-count">TEPAT <b>${state.correct}</b> / ${state.rounds.length}</span>`)}<div class="round-track" aria-label="Progres situasi">${state.rounds.map((_, i) => `<span class="${i < state.index ? 'done' : i === state.index ? 'current' : ''}">${i < state.index ? icon('Check') : i + 1}</span>`).join('')}</div><section class="decision-view ${answered ? 'revealed' : 'asking'}">${host(answered ? (correct ? 'Nah, kamu jeli!' : 'Ups. Kita cek bareng, yuk.') : ['Ada yang mau bilang sesuatu…', 'Oke, coba yang ini.', 'Jangan keburu yakin, ya.', 'Instingmu masih nyala?', 'Terakhir. Baca baik-baik!'][state.index], answered ? (correct ? 'happy' : 'oops') : 'thinking')}${caseCard(s)}<div class="decision-copy"><p class="eyebrow">${answered ? 'BEKAL RONDE BERIKUTNYA' : `RONDE ${state.index + 1} • APA KEPUTUSANMU?`}</p><h1 tabindex="-1">${escape(answered ? (correct ? 'NAH, BETUL!' : 'EH, TUNGGU…') : s.title)}</h1>${answered ? `<div class="round-reaction ${correct ? 'hit' : 'miss'}">${correct ? '+1 KEPUTUSAN TEPAT' : 'YUK, KENALI TANDA-TANDANYA'}</div><div class="decision-verdict ${s.answer}">${icon(s.answer === 'stop' ? 'HandPalm' : 'CheckCircle')}<span>Keputusan yang tepat: <b>${s.answer === 'stop' ? 'STOP' : 'LANJUT'}</b></span></div><p class="reason">${escape(s.reason)}</p><div class="learning-point"><b>${s.answer === 'stop' ? 'Tanda bahaya' : 'Yang sudah diperiksa'}</b><p>${escape(s.checkpoint)}</p></div><div class="learning-point"><b>Langkah aman</b><p>${escape(s.action)}</p></div>${button(state.index === state.rounds.length - 1 ? 'Lihat hasilku' : 'RONDE BERIKUTNYA', 'next-stop')}` : `<p class="lead">${escape(s.question)}</p><div class="decision-buttons"><button class="decision stop" data-action="answer" data-value="stop">${icon('HandPalm')}<b>STOP</b><span>Ada yang janggal!</span></button><button class="decision go" data-action="answer" data-value="go">${icon('ArrowRight')}<b>LANJUT</b><span>Aman? Gas!</span></button></div><p class="decision-hint">Bukan soal cepat. Yang penting, tepat.</p>`}</div></section>`;
+  return `${nav('STOP OR GO DECISION', `<span class="round-count">TEPAT <b>${state.correct}</b> / ${state.rounds.length}</span>`)}<div class="round-track" aria-label="Progres situasi">${state.rounds.map((_, i) => `<span class="${i < state.index ? 'done' : i === state.index ? 'current' : ''}">${i < state.index ? icon('Check') : i + 1}</span>`).join('')}</div><section class="decision-view asking">${host(answered ? 'Yuk, pahami alasannya.' : 'Baca detailnya dulu, ya.', answered ? 'idle' : 'thinking')}${caseCard(s)}<div class="decision-copy"><p class="eyebrow">RONDE ${state.index + 1} • APA KEPUTUSANMU?</p><h1 tabindex="-1">${escape(s.title)}</h1><p class="lead">${escape(s.question)}</p>${answered ? button('Lihat penjelasan', 'open-feedback') : `<div class="decision-buttons"><button class="decision stop" data-action="answer" data-value="stop">${icon('HandPalm')}<b>STOP</b><span>Ada yang janggal!</span></button><button class="decision go" data-action="answer" data-value="go">${icon('ArrowRight')}<b>LANJUT</b><span>Aman? Gas!</span></button></div><p class="decision-hint">Bukan soal cepat. Yang penting, tepat.</p>`}</div></section>${answered ? stopFeedback(s, correct) : ''}`;
+}
+function openFeedback() {
+  const dialog = document.querySelector('#answer-feedback');
+  if (!dialog) return;
+  dialog.showModal();
+  dialog.querySelector('#feedback-title').focus({ preventScroll: true });
+  document.body.classList.add('feedback-open');
+  dialog.addEventListener('close', () => {
+    document.body.classList.remove('feedback-open');
+    screen.querySelector('[data-action="open-feedback"]')?.focus({ preventScroll: true });
+  }, { once: true });
 }
 function actScenario() {
   const s = state.scenario;
@@ -91,14 +105,15 @@ function animateIntro() {
       rows.forEach(row => row.classList.remove('step-active'));
       rows[index].classList.add('step-visible', 'step-active');
       react(mascot, mood);
-    }, 1500 + index * 1800));
+    }, 400 + index * 800));
   });
   introTimers.push(setTimeout(() => {
     react(mascot, 'idle');
     rows.forEach(row => row.classList.remove('step-active'));
-  }, 8100));
+  }, 3200));
 }
 function render() {
+  document.body.classList.remove('feedback-open');
   introTimers.forEach(clearTimeout);
   introTimers = [];
   const views = { home, intro, 'stop-play': stopPlay, 'act-scenario': actScenario, 'act-play': actPlay, completion, result, debrief };
@@ -195,8 +210,10 @@ document.addEventListener('click', event => {
     state.answer = value;
     const correct = value === state.rounds[state.index].answer;
     if (correct) state.correct++;
-    tone(correct); render();
+    tone(correct); render(); openFeedback();
   }
+  if (action === 'open-feedback') openFeedback();
+  if (action === 'close-feedback') document.querySelector('#answer-feedback')?.close();
   if (action === 'next-stop' && state.view === 'stop-play' && state.answer !== null) {
     if (state.index === state.rounds.length - 1) {
       state.view = 'result';
