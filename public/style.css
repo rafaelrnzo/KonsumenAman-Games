@@ -122,3 +122,129 @@ dialog.answer-feedback{width:min(620px,calc(100vw - 28px));max-width:620px;max-h
 .incident-bubble::after{content:'';position:absolute;left:30px;bottom:-11px;width:18px;height:18px;background:#fff8e7;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-12deg) skew(-18deg)}
 @container (max-width:450px){.speech-scribble{max-width:126px}.case-card blockquote{margin:18px;padding:16px;font-size:16px}.host-line>p::after{bottom:-8px;width:14px;height:14px}}
 @container (max-width:1100px){.act-scenario .incident-visual{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}.act-scenario .incident-visual>.toon{margin:20px auto 12px}.act-scenario .incident-visual>.incident-bubble{margin:0 auto 6px;rotate:-4deg}}
+
+/* Keep text readable on booth TVs for children and older visitors. */
+.eyebrow{font-size:clamp(14px,.95cqw,18px);line-height:1.45;margin-bottom:18px}
+.arcade-wordmark{font-size:clamp(14px,.95cqw,18px)}
+.event-brand>span{font-size:clamp(10px,.7cqw,13px)}
+.game-name{font-size:clamp(16px,1.05cqw,20px)}
+.back-button,.reset-button{font-size:clamp(15px,.95cqw,18px);min-height:50px;padding:12px 16px}
+.game-footer{font-size:clamp(12px,.8cqw,15px);min-height:60px}
+.button{font-size:clamp(18px,1.2cqw,23px);min-height:72px;padding:18px 28px}
+.lead{font-size:clamp(21px,1.55cqw,30px);line-height:1.55}
+.host-line>p{font-size:clamp(17px,1.1cqw,21px);line-height:1.45;max-width:520px;padding:15px 22px}
+.intro-copy h1{font-size:clamp(58px,6.1cqw,104px);line-height:1.14}
+.intro-guide{padding:34px 40px}
+.intro-guide li{gap:24px;padding:24px 0}
+.intro-guide li>span{font-size:clamp(24px,1.6cqw,30px)}
+.intro-guide b{font-size:clamp(22px,1.45cqw,27px);line-height:1.35}
+.intro-guide li p{font-size:clamp(17px,1.15cqw,21px);line-height:1.5;margin-top:8px}
+.case-channel{font-size:clamp(14px,.9cqw,17px)}
+.case-sender b{font-size:clamp(18px,1.2cqw,22px)}
+.case-sender div>span{font-size:clamp(13px,.85cqw,16px)}
+.case-card blockquote{font-size:clamp(23px,1.8cqw,34px);line-height:1.5}
+.case-bottom{font-size:clamp(14px,.9cqw,17px)}
+.decision-copy h1{font-size:clamp(40px,3.4cqw,60px)}
+.decision-copy .lead{font-size:clamp(21px,1.5cqw,28px)}
+.decision>span{font-size:clamp(15px,1cqw,18px)}
+.decision-hint{font-size:clamp(15px,1cqw,18px)}
+.round-count{font-size:clamp(14px,.95cqw,18px)}
+.scenario-copy h1{font-size:clamp(48px,4.8cqw,84px);line-height:1.16}
+.scenario-copy .lead{font-size:clamp(22px,1.65cqw,31px)}
+.ready-note{max-width:720px;padding:21px 24px}
+.ready-note p{font-size:clamp(17px,1.15cqw,22px);line-height:1.55}
+.incident-visual>.incident-bubble{max-width:390px;padding:18px 24px;color:var(--ink);font-size:clamp(18px,1.2cqw,22px);line-height:1.4;background:#fff8e7}
+.response-context h1{font-size:clamp(32px,2.5cqw,46px);line-height:1.25}
+.response-context>p{font-size:clamp(17px,1.15cqw,21px);line-height:1.5}
+.timer-panel>span{font-size:clamp(12px,.8cqw,15px)}
+.timer-panel div>span,.timer-panel small{font-size:clamp(12px,.8cqw,15px)}
+.response-heading h2{font-size:clamp(34px,2.8cqw,50px);line-height:1.2}
+.response-heading>p{display:block;font-size:clamp(17px,1.1cqw,21px);line-height:1.5}
+.response-progress,.response-feedback{font-size:clamp(15px,1cqw,19px);line-height:1.45}
+.response-tile{min-height:138px;padding:20px 24px}
+.response-tile b{font-size:clamp(18px,1.25cqw,23px);line-height:1.35}
+.tile-state{font-size:clamp(11px,.75cqw,14px);line-height:1.35}
+.debrief-heading>.lead{font-size:clamp(20px,1.45cqw,27px)}
+.action-recap h2{font-size:clamp(20px,1.35cqw,25px);line-height:1.35}
+.action-recap p{font-size:clamp(16px,1.05cqw,20px);line-height:1.5}
+.debrief-end>p{font-size:clamp(16px,1.05cqw,20px)}
+.result-heading>p:last-child{font-size:clamp(17px,1.1cqw,21px)}
+.score-note,.auto-reset{font-size:clamp(13px,.85cqw,16px);line-height:1.5}
+dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
+.answer-feedback h2{font-size:clamp(34px,3.2cqw,46px)}
+.answer-feedback .eyebrow{font-size:clamp(14px,1cqw,17px)}
+.answer-feedback .round-reaction{font-size:clamp(15px,1.05cqw,18px)}
+.answer-feedback .decision-verdict{font-size:clamp(17px,1.15cqw,20px);padding:17px 18px}
+.answer-feedback .reason,.answer-feedback .learning-point>p{font-size:clamp(17px,1.1cqw,20px);line-height:1.55}
+.answer-feedback .learning-point>b{font-size:clamp(16px,1.05cqw,19px)}
+.answer-feedback .button{font-size:clamp(17px,1.15cqw,21px)}
+
+@container (max-width:1100px){
+  .intro-copy{text-align:center;display:flex;flex-direction:column;align-items:center}
+  .intro-view{row-gap:48px;padding-block:38px 64px}
+  .intro-guide{width:min(100%,820px);margin-inline:auto}
+  .intro-guide .intro-cast{margin-bottom:28px}
+  .intro-guide li>span{font-size:30px}
+  .intro-guide b{font-size:27px}
+  .intro-guide li p{font-size:21px}
+  .lead,.scenario-copy .lead{font-size:26px}
+  .button{font-size:22px}
+  .scenario-copy{text-align:center;display:flex;flex-direction:column;align-items:center}
+  .scenario-copy .lead{max-width:760px}
+  .ready-note{text-align:left}
+  .ready-note p{font-size:21px}
+  .act-scenario{row-gap:38px;padding-block:30px 60px}
+  .act-scenario .incident-visual>.incident-bubble{display:inline-block;margin-top:12px}
+  .response-view{gap:34px;padding-block:24px 54px}
+  .response-context{padding:26px}
+  .response-context h1{font-size:42px}
+  .response-context>p{font-size:20px}
+  .response-heading h2{font-size:38px}
+  .response-heading>p{font-size:19px}
+  .response-progress,.response-feedback{font-size:16px}
+  .response-grid{gap:18px}
+  .response-tile{min-height:160px;padding:20px}
+  .response-tile b{font-size:22px}
+  .tile-state{font-size:13px}
+  .debrief-heading>.lead{font-size:23px}
+  .action-recap h2{font-size:24px}
+  .action-recap p{font-size:19px}
+  .debrief-end>p{font-size:18px}
+}
+
+@container (max-width:450px){
+  .eyebrow{font-size:11px}
+  .game-name{font-size:12px}
+  .back-button,.reset-button{font-size:12px;min-height:42px;padding:9px 11px}
+  .game-footer{font-size:10px}
+  .intro-copy h1{font-size:12cqw}
+  .lead,.scenario-copy .lead{font-size:17px}
+  .intro-guide{padding:24px}
+  .intro-guide li{gap:15px;padding:18px 0}
+  .intro-guide li>span{font-size:19px}
+  .intro-guide b{font-size:17px}
+  .intro-guide li p{font-size:14px}
+  .button{font-size:15px;min-height:58px;padding:15px 19px}
+  .host-line>p{font-size:14px}
+  .case-channel,.case-bottom{font-size:12px}
+  .case-sender b{font-size:14px}
+  .case-sender div>span{font-size:11px}
+  .case-card blockquote{font-size:18px}
+  .decision-copy h1{font-size:8cqw}
+  .decision-copy .lead{font-size:17px}
+  .decision>span,.decision-hint{font-size:12px}
+  .scenario-copy h1{font-size:10cqw}
+  .ready-note p{font-size:15px}
+  .incident-visual>.incident-bubble{font-size:16px}
+  .response-context h1{font-size:24px}
+  .response-context>p{font-size:14px}
+  .response-heading h2{font-size:26px}
+  .response-heading>p{font-size:14px}
+  .response-progress,.response-feedback{font-size:12px}
+  .response-tile b{font-size:15px}
+  .tile-state{font-size:10px}
+  .action-recap h2{font-size:16px}
+  .action-recap p{font-size:14px}
+  .debrief-end>p{font-size:14px}
+  .answer-feedback .reason,.answer-feedback .learning-point>p{font-size:15px}
+}
