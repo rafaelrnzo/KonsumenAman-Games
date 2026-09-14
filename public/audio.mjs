@@ -1,6 +1,6 @@
 export const audioSettings = Object.freeze({
   masterVolume: 0.9,
-  lobbyMusicVolume: 0.58,
+  lobbyMusicVolume: 0.8,
   musicVolume: 0.52,
   effectsVolume: 0.9
 });

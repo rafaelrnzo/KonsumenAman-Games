@@ -42,6 +42,6 @@ Impor repository ini dari GitHub. Gunakan root repository, preset Other, build c
 
 ## Musik dan animasi maskot
 
-BGM lobby `assets/bgm-fekdi.mp3` diputar berulang pada volume 58%. Setelah pemain memilih game, musik berpindah ke aransemen sintetis yang lebih cepat agar suasana permainan berbeda dari lobby. Autoplay dicoba saat halaman dibuka; jika diblokir browser, interaksi pertama memulai musik. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
+BGM lobby `assets/bgm-fekdi.mp3` diputar berulang pada volume 80%. Setelah pemain memilih game, musik berpindah ke aransemen sintetis yang lebih cepat agar suasana permainan berbeda dari lobby. Autoplay dicoba saat halaman dibuka; jika diblokir browser, interaksi pertama memulai musik. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
 
 Tujuh animasi maskot tersedia: santai, menyapa, berpikir, benar, salah, semangat, dan selebrasi. Intro menyapa selama 0,4 detik, lalu menampilkan langkah 01–03 berselang 0,8 detik dengan perubahan ekspresi. Maskot kembali idle 1,2 detik setelah langkah 03. Komponen bersama ada di `mascot.mjs`. Stop or Go dan Act Fast menggunakan reaksi jawaban, dan hasil sesi menggunakan selebrasi atau semangat.

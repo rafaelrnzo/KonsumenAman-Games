@@ -6,6 +6,7 @@ import { audioSettings, gameTrack, musicSources } from '../public/audio.mjs';
 
 test('lobby and in-game audio have distinct, audible sources', () => {
   assert.ok(audioSettings.lobbyMusicVolume >= audioSettings.musicVolume);
+  assert.ok(audioSettings.lobbyMusicVolume < audioSettings.effectsVolume);
   assert.ok(audioSettings.musicVolume >= 0.5);
   assert.ok(audioSettings.effectsVolume > audioSettings.musicVolume);
   assert.notEqual(musicSources.lobby, musicSources.game);
