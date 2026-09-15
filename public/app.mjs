@@ -1,8 +1,8 @@
-import { createMusic } from './music.mjs?v=audio-10';
+import { createMusic } from './music.mjs?v=menu-music-1';
 import { character, react } from './mascot.mjs';
 import { stopScenarios, actScenarios, responses, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
-import { gameAudio } from './audio.mjs?v=audio-10';
+import { gameAudio } from './audio.mjs?v=menu-music-1';
 
 const screen = document.querySelector('#screen');
 const kiosk = document.querySelector('#kiosk');
@@ -22,10 +22,10 @@ function updateMusicButton() {
   button.setAttribute('aria-pressed', String(playing));
 }
 function syncMusic() {
-  const inGame = state.view !== 'home';
-  music.setEnabled(sound && !inGame);
+  const menuMusic = ['home', 'intro', 'act-scenario'].includes(state.view);
+  music.setEnabled(sound && menuMusic);
   gameAudio.setEnabled(sound);
-  gameAudio.setMusicEnabled(sound && inGame && !document.hidden);
+  gameAudio.setMusicEnabled(sound && !menuMusic && !document.hidden);
 }
 
 function button(label, action, secondary = false) {
