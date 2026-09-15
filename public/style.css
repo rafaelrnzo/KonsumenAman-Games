@@ -265,3 +265,18 @@ dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
 .game-nav>.back-button{width:48px;height:48px;min-height:48px;padding:0;display:grid;place-items:center;border-radius:50%}.game-nav>.back-button svg{width:22px;height:22px}
 
 .feedback-close{display:grid;place-items:center;padding:0;line-height:1}.feedback-close svg{display:block;width:22px;height:22px}
+/* One joined outline for every speech bubble; no rotated square seams. */
+.speech-scribble,.host-line>p,.incident-visual>.incident-bubble,.case-card blockquote{
+  --bubble-fill:#fff8e7;
+  background:var(--bubble-fill);border:2px solid var(--ink);border-radius:22px;
+  overflow:visible;box-shadow:none;filter:drop-shadow(3px 4px 0 #192a72);
+}
+.speech-scribble::before,.host-line>p::before,.incident-bubble::before,.case-card blockquote::before,
+.speech-scribble::after,.host-line>p::after,.incident-bubble::after,.case-card blockquote::after{
+  content:'';position:absolute;top:auto;left:24px;bottom:-15px;
+  width:0;height:0;background:transparent;transform:none;z-index:1;
+  border:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:15px solid var(--ink);
+}
+.speech-scribble::after,.host-line>p::after,.incident-bubble::after,.case-card blockquote::after{
+  left:26px;bottom:-11px;border-left-width:8px;border-right-width:8px;border-top:12px solid var(--bubble-fill);
+}
