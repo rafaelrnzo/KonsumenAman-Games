@@ -1,8 +1,8 @@
-import { createMusic } from './music.mjs?v=menu-music-1';
+import { createMusic } from './music.mjs?v=menu-music-2';
 import { character, react } from './mascot.mjs';
 import { stopScenarios, actScenarios, responses, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
-import { gameAudio } from './audio.mjs?v=menu-music-1';
+import { gameAudio } from './audio.mjs?v=menu-music-2';
 
 const screen = document.querySelector('#screen');
 const kiosk = document.querySelector('#kiosk');

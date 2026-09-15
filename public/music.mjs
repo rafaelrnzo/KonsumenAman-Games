@@ -1,4 +1,4 @@
-import { audioSettings } from './audio.mjs?v=menu-music-1';
+import { audioSettings } from './audio.mjs?v=menu-music-2';
 
 // Keep one lobby audio instance so returning home resumes instead of restarting it.
 export function createMusic(onChange = () => {}) {
@@ -26,5 +26,6 @@ export function createMusic(onChange = () => {}) {
   document.addEventListener('keydown', unlock);
   document.addEventListener('click', unlock);
   document.addEventListener('visibilitychange', sync);
+  setTimeout(sync, audioSettings.lobbyAutoplayDelayMs);
   return { audio, sync, setEnabled(value) { enabled = value; sync(); } };
 }
