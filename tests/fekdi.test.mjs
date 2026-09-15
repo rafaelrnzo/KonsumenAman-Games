@@ -56,3 +56,37 @@ test('FEKDI revision 2 content, scoring, unique attempts, and 200-session distri
     }
   }
 });
+
+test('success cues build from Stop or Go to Act Fast and finish; mute stays silent', async () => {
+  const { GameAudio } = await import('../public/audio.mjs');
+  const audio = new GameAudio();
+  const notes = [];
+  audio.context = { currentTime: 0 };
+  const percussion = [], ducking = [];
+  audio.percussion = (...hit) => percussion.push(hit);
+  audio.musicBus = { gain: { cancelScheduledValues() {}, setTargetAtTime: (...event) => ducking.push(event) } };
+  audio.unlock = () => audio.enabled;
+  audio.effectNote = (...note) => notes.push(note);
+  let buzzes = 0;
+  audio.buzzer = () => buzzes++;
+  audio.feedback(true);
+  assert.equal(notes.length, 14);
+  notes.length = 0;
+  audio.feedback(true, true);
+  assert.equal(notes.length, 25);
+  notes.length = 0;
+  audio.feedback(true, true, true);
+  assert.equal(notes.length, 32);
+  assert.equal(percussion.length, 10);
+  assert.ok(notes.some(([, , , , , endFrequency]) => endFrequency === 48));
+  assert.ok(ducking.some(([volume]) => volume < audioSettings.musicVolume));
+  assert.equal(ducking.at(-1)[0], audioSettings.musicVolume);
+  assert.ok(Math.max(...notes.map(([, start, duration]) => start + duration)) > 1.5);
+  notes.length = 0;
+  audio.feedback(false);
+  assert.equal(buzzes, 1);
+  assert.equal(notes.length, 0);
+  audio.enabled = false;
+  assert.equal(audio.feedback(true, true, true), false);
+  assert.equal(notes.length, 0);
+});

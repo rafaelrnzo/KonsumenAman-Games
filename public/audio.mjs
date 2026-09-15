@@ -132,29 +132,80 @@ export class GameAudio {
     oscillator.addEventListener('ended', () => this.musicNodes.delete(oscillator), { once: true });
   }
 
-  feedback(correct, celebrate = false, finish = false) {
+  feedback(correct, celebrate = false, finish = false, reward = true) {
     if (!this.unlock()) return false;
     if (!correct) {
       this.buzzer();
       return true;
     }
 
-    const notes = finish ? [523, 659, 784, 1047, 784, 1047] : celebrate ? [523, 659, 784, 1047] : [660, 880];
+    const now = this.context.currentTime;
+    if (!reward) {
+      this.effectNote(880, now, 0.12, 'sine', 0.12);
+      return true;
+    }
+    const notes = finish ? [523, 659, 784, 1047, 784, 1047, 1319, 1568] : celebrate ? [523, 659, 784, 1047, 1319, 1568] : [659, 784, 1047, 1319];
+    const step = finish ? 0.15 : celebrate ? 0.085 : 0.1;
+    const ending = now + (notes.length - 1) * step;
+    const tail = finish ? 1.2 : 0.45;
+    // Make room for the fanfare, even when answers arrive in quick succession.
+    this.musicBus.gain.cancelScheduledValues(now);
+    this.musicBus.gain.setTargetAtTime(audioSettings.musicVolume * 0.25, now, 0.02);
+    this.musicBus.gain.setTargetAtTime(audioSettings.musicVolume, ending + tail, 0.15);
     notes.forEach((frequency, index) => {
-      const start = this.context.currentTime + index * (finish ? 0.13 : 0.075);
-      const duration = finish && index === notes.length - 1 ? 0.55 : finish ? 0.22 : celebrate ? 0.24 : 0.18;
-      const oscillator = this.context.createOscillator();
-      const gain = this.context.createGain();
-      oscillator.type = celebrate || finish ? 'triangle' : 'sine';
-      oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.14, start);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
-      oscillator.connect(gain);
-      gain.connect(this.effectsBus);
-      oscillator.start(start);
-      oscillator.stop(start + duration + 0.01);
+      const start = now + index * step;
+      const duration = index === notes.length - 1 ? tail : 0.22;
+      this.effectNote(frequency, start, duration, 'triangle', 0.28);
+      this.effectNote(frequency * 2, start, duration * 0.7, 'sine', 0.1);
+      if (celebrate || finish) this.effectNote(frequency / 2, start, duration, 'sawtooth', 0.055);
     });
+    [0, ...(finish ? [0.3, 0.6, 1.05] : celebrate ? [0.17, 0.425] : [0.3])].forEach(offset => {
+      this.effectNote(150, now + offset, 0.22, 'sine', 0.4, 48);
+      this.percussion(now + offset, 0.13, 0.18);
+    });
+    [262, 330, 392, 523].forEach(frequency => {
+      this.effectNote(frequency, ending, tail, 'triangle', finish ? 0.14 : 0.08);
+    });
+    if (finish) this.percussion(ending, 1.1, 0.22);
     return true;
+  }
+
+  effectNote(frequency, start, duration, wave, volume, endFrequency = frequency) {
+    const oscillator = this.context.createOscillator();
+    const gain = this.context.createGain();
+    oscillator.type = wave;
+    oscillator.frequency.setValueAtTime(frequency, start);
+    oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(this.effectsBus);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.01);
+    oscillator.addEventListener('ended', () => { oscillator.disconnect(); gain.disconnect(); }, { once: true });
+  }
+
+  percussion(start, duration, volume) {
+    if (!this.noiseBuffer) {
+      this.noiseBuffer = this.context.createBuffer(1, Math.ceil(this.context.sampleRate * 1.2), this.context.sampleRate);
+      const samples = this.noiseBuffer.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    }
+    const source = this.context.createBufferSource();
+    const filter = this.context.createBiquadFilter();
+    const gain = this.context.createGain();
+    source.buffer = this.noiseBuffer;
+    filter.type = 'highpass';
+    filter.frequency.value = 1800;
+    gain.gain.setValueAtTime(volume, start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.effectsBus);
+    source.start(start);
+    source.stop(start + duration);
+    source.addEventListener('ended', () => { source.disconnect(); filter.disconnect(); gain.disconnect(); }, { once: true });
   }
 
   buzzer() {

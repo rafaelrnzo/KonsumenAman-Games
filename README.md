@@ -13,14 +13,14 @@ Mode Otomatis mengikuti lebar layar. Tombol Portrait mempersempit preview di des
 ## Konten dan aturan
 
 - `content.mjs`: 15 situasi Stop or Go, 10 kasus Act Fast, delapan tindakan, penjelasan, dan pengaturan waktu.
-- `audio.mjs`: BGM in-game sintetis dan efek suara benar, buzzer salah, serta kemenangan.
+- `audio.mjs`: BGM in-game sintetis dan efek suara benar, buzzer salah, serta kemenangan. Jawaban benar Act Fast memakai arpeggio berlapis; Stop or Go memakai tiga nada naik. Kedua game memakai fanfare akhir dengan bas dan akor penutup.
 - `engine.mjs`: pengacakan, penghitungan pilihan unik, dan skor.
 - `app.mjs`: alur layar, input, timer, dan reset.
 - `style.css`: layout adaptif dan visual.
 
-Stop or Go mengambil lima situasi unik per sesi. Act Fast menghabiskan satu kumpulan sepuluh kasus sebelum mengacak ulang, tanpa kasus berulang di perbatasan kumpulan. Timer dimulai setelah Saya siap. Setiap tindakan hanya dihitung sekali. Sesi aktif tidak memiliki batas waktu. Tanpa input selama 90 detik, sesi kembali ke awal. Layar hasil Act Fast membuka penjelasan otomatis setelah 45 detik jika belum dipilih. Tombol selesai pada penjelasan aktif setelah lima detik.
+Pilih game langsung membuka form nama panggilan dengan petunjuk singkat. Nama hanya ada dalam memori sesi dan dihapus saat kembali ke awal. Stop or Go langsung dimulai setelah nama diisi; Act Fast membuka kasus dan menunggu Saya siap sebelum menghitung waktu. Stop or Go mengambil lima situasi unik per sesi. Act Fast menghabiskan satu kumpulan sepuluh kasus sebelum mengacak ulang, tanpa kasus berulang di perbatasan kumpulan. Timer dimulai setelah Saya siap. Setiap tindakan hanya dihitung sekali. Sesi aktif tidak memiliki batas waktu. Tanpa input selama 90 detik, sesi kembali ke awal. Layar hasil Act Fast membuka penjelasan otomatis setelah 45 detik jika belum dipilih. Tombol selesai pada penjelasan aktif setelah lima detik.
 
-Skenario dan istilah berasal dari brief pengguna. Beberapa kalimat disingkat untuk layar. Nama Bank Indonesia memakai aset project. Tampilan memakai karakter kartun orisinal, kartu situasi dengan animasi masuk, dialog karakter yang merespons pilihan, indikator tindakan tepat, dan nada singkat. Gerakan dimatikan saat perangkat meminta reduced motion. Font Plus Jakarta Sans memakai aset lokal project, font Bungee berasal dari Google Fonts, dan ikon berasal dari Phosphor Icons. Lisensi tersedia di `assets/BUNGEE-OFL.txt` dan `assets/PHOSPHOR-LICENSE`.
+Skenario dan istilah berasal dari brief pengguna. Beberapa kalimat disingkat untuk layar. Logo Konsumen Aman memakai aset asli dari BI-Portal-PeKA (`web/public/images/logo-konsumen-aman-white.png`). Tampilan memakai karakter kartun orisinal, kartu situasi dengan animasi masuk, dialog karakter yang merespons pilihan, indikator tindakan tepat, dan nada singkat. Gerakan dimatikan saat perangkat meminta reduced motion. Font Plus Jakarta Sans memakai aset lokal project, font Bungee berasal dari Google Fonts, dan ikon berasal dari Phosphor Icons. Lisensi tersedia di `assets/BUNGEE-OFL.txt` dan `assets/PHOSPHOR-LICENSE`.
 
 ## Pemeriksaan
 
@@ -42,6 +42,6 @@ Impor repository ini dari GitHub. Gunakan root repository, preset Other, build c
 
 ## Musik dan animasi maskot
 
-BGM lobby `assets/bgm-fekdi.mp3` diputar berulang pada volume 80% di layar utama, intro game, dan briefing Act Fast. Autoplay dicoba saat halaman dibuka dan dicoba ulang setelah 0,75 detik; jika tetap diblokir browser, interaksi pertama memulai musik. Setelah permainan dimulai, musik berpindah ke aransemen sintetis yang lebih cepat agar suasana permainan berbeda dari lobby. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
+BGM lobby `assets/bgm-fekdi.mp3` diputar berulang pada volume 80% di layar utama, pengisian nama, dan briefing Act Fast. Autoplay dicoba saat halaman dibuka dan dicoba ulang setelah 0,75 detik; jika tetap diblokir browser, interaksi pertama memulai musik. Setelah permainan dimulai, musik berpindah ke aransemen sintetis yang lebih cepat agar suasana permainan berbeda dari lobby. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
 
-Tujuh animasi maskot tersedia: santai, menyapa, berpikir, benar, salah, semangat, dan selebrasi. Intro menyapa selama 0,4 detik, lalu menampilkan langkah 01-03 berselang 0,8 detik dengan perubahan ekspresi. Maskot kembali idle 1,2 detik setelah langkah 03. Komponen bersama ada di `mascot.mjs`. Stop or Go dan Act Fast menggunakan reaksi jawaban, dan hasil sesi menggunakan selebrasi atau semangat.
+Tujuh animasi maskot tersedia: santai, menyapa, berpikir, benar, salah, semangat, dan selebrasi. Alternatif tangan stik dengan siku tegas dipakai dalam game. Halaman `mascot-demo.html` menyediakan tombol pembanding tangan stik dan versi lengkung awal, dengan semua ekspresi yang sama. Komponen bersama ada di `mascot.mjs`. Stop or Go dan Act Fast menggunakan reaksi jawaban, dan hasil sesi menggunakan selebrasi atau semangat.

@@ -1,5 +1,5 @@
 import { createMusic } from './music.mjs?v=6f9757cadf1c';
-import { character, react } from './mascot.mjs';
+import { character, react } from './mascot.mjs?v=backlog-3';
 const moods=[['idle','Santai','Santai dulu.'],['wave','Menyapa','Hai! Siap bermain?'],['thinking','Berpikir','Hmm… periksa detailnya dulu.'],['happy','Benar','Nah, kamu jeli!'],['oops','Salah','Ups. Kita cek bareng, yuk.'],['encourage','Semangat','Yuk, kamu pasti bisa!'],['celebrate','Selebrasi','Tuntas! Kerja bagus.']];
 const profiles = [
   { kind: 'stop', name: 'SI WASPADA', role: 'STOP OR GO · PERIKSA DULU', traits: 'Teliti · Kritis · Peduli', description: 'Si penjaga detail yang mengajak kita berhenti sejenak sebelum percaya. Ia membantu mengenali pesan mencurigakan, permintaan data pribadi, dan tanda penipuan.', message: 'Kalau ragu, STOP dulu!' },
@@ -27,3 +27,10 @@ musicButton.addEventListener('click', () => {
   music.setEnabled(musicEnabled);
 });
 music.sync();
+
+document.querySelector('#variant').addEventListener('click', event => {
+  const stick = event.target.getAttribute('aria-pressed') !== 'true';
+  document.querySelectorAll('.toon').forEach(el => el.classList.toggle('stick', stick));
+  event.target.setAttribute('aria-pressed', String(stick));
+  event.target.textContent = stick ? 'Tangan stik (alternatif)' : 'Tangan lengkung (awal)';
+});
