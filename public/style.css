@@ -273,10 +273,24 @@ dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
 }
 .speech-scribble::before,.host-line>p::before,.incident-bubble::before,.case-card blockquote::before,
 .speech-scribble::after,.host-line>p::after,.incident-bubble::after,.case-card blockquote::after{
-  content:'';position:absolute;top:auto;left:24px;bottom:-15px;
+  content:'';position:absolute;top:auto;left:34px;bottom:-14px;
   width:0;height:0;background:transparent;transform:none;z-index:1;
-  border:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:15px solid var(--ink);
+  border:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:16px solid var(--ink);
 }
 .speech-scribble::after,.host-line>p::after,.incident-bubble::after,.case-card blockquote::after{
-  left:26px;bottom:-11px;border-left-width:8px;border-right-width:8px;border-top:12px solid var(--bubble-fill);
+  left:36px;bottom:-10px;border-left-width:8px;border-right-width:8px;border-top:14px solid var(--bubble-fill);
 }
+/* Point each tail at its speaker rather than always downwards. */
+.host-line>p{rotate:0deg}
+.host-line>p::before,.host-line>p::after{
+  top:50%;bottom:auto;transform:translateY(-50%);border:0;
+  border-top:10px solid transparent;border-bottom:10px solid transparent;
+  border-right:18px solid var(--ink);left:-18px;
+}
+.host-line>p::after{left:-14px;border-top-width:8px;border-bottom-width:8px;border-right:16px solid var(--bubble-fill)}
+.incident-visual>.incident-bubble{rotate:0deg}
+.incident-bubble::before,.incident-bubble::after{
+  left:50%;bottom:auto;top:-18px;transform:translateX(-50%);border:0;
+  border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid var(--ink);
+}
+.incident-bubble::after{top:-14px;border-left-width:8px;border-right-width:8px;border-bottom:16px solid var(--bubble-fill)}
