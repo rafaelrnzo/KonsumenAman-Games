@@ -248,3 +248,20 @@ dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
   .debrief-end>p{font-size:14px}
   .answer-feedback .reason,.answer-feedback .learning-point>p{font-size:15px}
 }
+
+/* Equal side columns keep both headings on the same central axis. */
+.brand-header,.game-nav{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);align-items:center}
+.brand-header>.brand-home,.game-nav>.back-button{justify-self:start;max-width:100%}
+.brand-header>.arcade-wordmark,.game-nav>.game-name{grid-column:2;text-align:center;justify-self:center;width:100%}
+.game-nav>:last-child:not(.game-name){grid-column:3;justify-self:end;text-align:right}
+@container(max-width:450px){.brand-home img{width:100%;min-width:0}.brand-header>.brand-home{padding:6px}.game-nav>.back-button{font-size:10px;gap:4px;padding:8px 5px}.game-nav>.back-button svg{width:14px;height:14px}.game-nav>.game-name{font-size:11px;line-height:1.4}.game-nav>.round-count{font-size:10px}}
+/* Balance the space above and below the portrait guide mascot. */
+@container(max-width:1100px){
+  .intro-guide{padding-top:0}
+  .intro-guide .intro-cast{display:flex;align-items:center;justify-content:center;min-height:150px;margin:0 0 16px}
+  .intro-guide .intro-cast .toon{flex-shrink:0;transform-origin:50% 50%}
+}
+
+.game-nav>.back-button{width:48px;height:48px;min-height:48px;padding:0;display:grid;place-items:center;border-radius:50%}.game-nav>.back-button svg{width:22px;height:22px}
+
+.feedback-close{display:grid;place-items:center;padding:0;line-height:1}.feedback-close svg{display:block;width:22px;height:22px}
