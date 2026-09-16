@@ -3,6 +3,7 @@ import { character, react } from './mascot.mjs?v=backlog-3';
 import { stopScenarios, actScenarios, responses, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
 import { gameAudio } from './audio.mjs?v=fanfare-6';
+import { abandonPlay, completePlay, createParticipant, createPlay, getBooth, saveAction } from './booth-api.mjs';
 
 const screen = document.querySelector('#screen');
 const kiosk = document.querySelector('#kiosk');
@@ -10,6 +11,13 @@ const announcement = document.querySelector('#announcement');
 const nextAct = makeBag(actScenarios);
 const icon = name => `<svg aria-hidden="true"><use href="./assets/icons.svg#${name}"></use></svg>`;
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const boothId = new URLSearchParams(location.search).get('boothId')?.trim() || '';
+let booth = { phase: 'loading', data: null, message: '' };
+let participant = null;
+let participantRequestId = null;
+let pendingPlay = null;
+let pendingActions = [];
+let actionFlush = Promise.resolve();
 let state = { view: 'home', game: null };
 let lastInput = performance.now(), enteredAt = performance.now(), completeTimer;
 let sound = true;
@@ -32,7 +40,7 @@ function button(label, action, secondary = false) {
   return `<button class="button${secondary ? ' secondary' : ''}" data-action="${action}">${label}${icon('ArrowRight')}</button>`;
 }
 function header() {
-  return `<header class="brand-header"><button class="brand-home" data-action="home" aria-label="Kembali ke pilihan game"><img src="./assets/logo-konsumen-aman-white.png" width="193" height="63" alt="Konsumen Aman"></button><span class="arcade-wordmark">GAME ZONE</span></header>`;
+  return `<header class="brand-header"><button class="brand-home" data-action="home" aria-label="Kembali ke pilihan game"><img src="./assets/logo-konsumen-aman-white.png" width="193" height="63" alt="Konsumen Aman"></button><span class="booth-title">${booth.data ? escape(booth.data.name) : 'GAME ZONE'}</span><span class="arcade-wordmark">GAME ZONE</span></header>`;
 }
 function footer() {
   return `<footer class="game-footer"><span>KALAU RAGU, <b>STOP DULU!</b></span><span>${icon('HandPalm')} SENTUH & MAIN</span></footer>`;
@@ -44,14 +52,26 @@ function host(line, mood = '') {
   return `<div class="host-line">${character(state.game === 'act' ? 'act' : 'stop', mood)}<p>${line}</p></div>`;
 }
 function home() {
-  return `<section class="home-view"><div class="home-hero"><p class="eyebrow">SELAMAT DATANG DI TEMPAT UJI INSTING</p><h1 tabindex="-1">Hmm…<br>YAKIN <span>AMAN?</span></h1><p>Kelihatannya gampang.<br>Coba dulu, baru bilang.</p></div><div class="home-games">
+  return `<section class="home-view"><div class="home-hero"><p class="eyebrow">${participant ? `MAIN LAGI, ${escape(participant.nickname).toUpperCase()}?` : 'SELAMAT DATANG DI TEMPAT UJI INSTING'}</p><h1 tabindex="-1">Hmm…<br>YAKIN <span>AMAN?</span></h1><p>${state.preparing ? 'Menyiapkan permainan...' : participant ? 'Pilih game berikutnya. Identitas pemain tetap dipakai.' : 'Kelihatannya gampang.<br>Coba dulu, baru bilang.'}</p>${state.error ? `<p class="booth-error" role="alert">${escape(state.error)}</p>` : ''}</div><div class="home-games">
   <button class="game-choice stop-choice" data-action="choose-stop"><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop', 'wave')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
   <button class="game-choice act-choice" data-action="choose-act"><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act', 'thinking')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
   </div><div class="menu-extras"><button data-action="music" class="back-button">♫ Putar musik</button></div></section>`;
 }
+function boothStatus() {
+  const states = {
+    loading: ['MENYIAPKAN SESI', 'Tunggu sebentar', 'Kami sedang memeriksa link booth ini.'],
+    invalid: ['LINK TIDAK VALID', 'Sesi Game tidak ditemukan', 'Minta operator memindai QR Sesi Game lagi.'],
+    scheduled: ['SESI TERJADWAL', booth.data?.name || 'Sesi belum dimulai', booth.message || 'Permainan akan tersedia saat jadwal event dimulai.'],
+    closed: ['SESI DITUTUP', booth.data?.name || 'Permainan tidak tersedia', booth.message || 'Minta operator membuka Sesi Game dari Portal.'],
+    finished: ['SESI SELESAI', booth.data?.name || 'Event sudah selesai', 'Permainan baru tidak dapat dimulai dari link ini.'],
+    error: ['KONEKSI BERMASALAH', 'Sesi belum dapat dibuka', booth.message || 'Periksa koneksi lalu coba lagi.'],
+  };
+  const content = states[booth.phase] || states.error;
+  return `<section class="booth-state"><div class="completion-seal">${icon(booth.phase === 'loading' ? 'Timer' : 'Info')}</div><p class="eyebrow">${content[0]}</p><h1 tabindex="-1">${escape(content[1])}</h1><p>${escape(content[2])}</p>${booth.phase === 'error' ? '<button class="button" data-action="retry-bootstrap">COBA LAGI</button>' : ''}</section>`;
+}
 function intro() {
   const isStop = state.game === 'stop';
-  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="intro-view name-view"><div class="intro-copy"><p class="eyebrow">${isStop ? 'STOP OR GO • 5 RONDE' : 'ACT FAST • 1 INSIDEN'}</p><h1 tabindex="-1">SIAPA<br><span>NAMAMU?</span></h1><p class="lead">${isStop ? 'Baca situasi, lalu pilih STOP atau GO.' : 'Baca kasus, lalu temukan semua tindakan tepat.'}</p><form id="player-form"><label for="player-name">Nama panggilan</label><input id="player-name" name="playerName" type="text" required maxlength="30" autocomplete="off" enterkeyhint="go" aria-describedby="name-note" placeholder="Tulis namamu di sini"><p id="name-note">Nama hanya dipakai selama sesi permainan ini.</p><button class="button" type="submit">${isStop ? 'MULAI MAIN!' : 'LIHAT KASUS!'}${icon('ArrowRight')}</button></form></div><div class="name-mascot">${character(isStop ? 'stop' : 'act', 'wave')}</div></section>`;
+  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="intro-view name-view"><div class="intro-copy"><p class="eyebrow">${isStop ? 'STOP OR GO • 5 RONDE' : 'ACT FAST • 1 INSIDEN'}</p><h1 tabindex="-1">SIAPA<br><span>NAMAMU?</span></h1><p class="lead">${isStop ? 'Baca situasi, lalu pilih STOP atau GO.' : 'Baca kasus, lalu temukan semua tindakan tepat.'}</p><form id="player-form"><label for="player-name">Nama panggilan</label><input id="player-name" name="playerName" type="text" required maxlength="30" autocomplete="off" enterkeyhint="go" aria-describedby="name-note" placeholder="Tulis namamu di sini"><p id="name-note">Nama panggilan ini disimpan bersama hasil permainan untuk Sesi Game ini.</p><p id="form-error" class="booth-error" role="alert"></p><button class="button" type="submit">${isStop ? 'MULAI MAIN!' : 'LIHAT KASUS!'}${icon('ArrowRight')}</button></form></div><div class="name-mascot">${character(isStop ? 'stop' : 'act', 'wave')}</div></section>`;
 }
 function caseCard(s) {
   return `<div class="case-card"><div class="case-channel">${icon(s.icon)}<span>${escape(s.channel)}</span></div><div class="case-sender"><span class="sender-icon">${icon(s.icon)}</span><div><b>${escape(s.sender)}</b><span>Situasi simulasi</span></div></div><blockquote>${escape(s.message)}</blockquote><div class="case-bottom"><span>${icon('Info')} Perhatikan detail sebelum memilih</span></div></div>`;
@@ -91,7 +111,14 @@ function result() {
   const isStop = state.game === 'stop';
   const stats = isStop ? null : assess(state.scenario.required, state.chosen);
   const score = isStop ? null : scoreAct(state.elapsed, stats.wrong, state.scenario.targetTime);
-  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="result-view ${isStop ? 'stop-result' : ''}">${confetti(isStop ? 64 : 16)}<div class="result-heading"><div class="finish-mascot">${character(state.game, isStop && state.correct < 3 ? 'encourage' : 'celebrate')}</div><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI, ${escape(state.playerName)}!</p><h1 tabindex="-1">${isStop ? 'RONDE<br><span>SELESAI!</span>' : 'AKSI<br><span>TUNTAS!</span>'}</h1><p>${isStop ? 'Setiap keputusan adalah kesempatan untuk belajar.' : 'Kamu menemukan semua tindakan yang diperlukan.'}</p>${isStop ? `<div class="stop-score"><strong>${state.correct}<span> / ${state.rounds.length}</span></strong><p>keputusan tepat</p></div>` : ''}</div><div class="result-details">${isStop ? `<div class="learning-point"><b>Ingat sebelum bertindak</b><p>Periksa identitas, penerima, nominal, dan tujuan. Jika ada yang meragukan, berhenti dan verifikasi melalui kanal resmi.</p></div>${button('Selesai', 'home')}` : `<div class="badge-label">${icon('Trophy')}${score.badge}</div><div class="result-stats"><div><span>BENAR</span><b>${stats.correct}<small> / ${state.scenario.required.length}</small></b></div><div><span>SALAH</span><b>${stats.wrong}</b></div><div><span>WAKTU</span><b>${formatTime(state.elapsed)}<small> dtk</small></b></div><div class="score-stat"><span>SKOR</span><b>${score.score}</b></div></div><p class="score-note">700 poin selesai + ${score.bonus} bonus waktu − ${stats.wrong * 75} poin pilihan salah.</p>${button('Lihat penjelasan', 'debrief')}`}<p class="auto-reset">${isStop ? 'Kembali ke awal' : 'Lihat penjelasan'} dalam <span id="reset-count">45</span> detik.</p></div></section>`;
+  const displayedScore = isStop ? state.savedScore ?? state.correct : state.savedScore ?? score.score;
+  const saveState = state.saveState || 'saving';
+  const savePanel = saveState === 'failed'
+    ? `<div class="save-panel failed"><b>Hasil belum tersimpan</b><p>${escape(state.saveError || 'Periksa koneksi lalu kirim ulang.')}</p><div class="result-actions"><button class="button" data-action="retry-complete">KIRIM ULANG${icon('ArrowRight')}</button><button class="button secondary" data-action="force-reset">RESET PAKSA</button></div></div>`
+    : saveState === 'saved'
+      ? `<div class="save-panel saved"><b>${icon('CheckCircle')} Hasil tersimpan</b><p>Skor sudah masuk ke Sesi Game ${escape(booth.data.name)}.</p>${isStop ? '' : '<button class="button secondary debrief-button" data-action="debrief">LIHAT PENJELASAN</button>'}<div class="result-actions"><button class="button" data-action="repeat-player">MAIN LAGI${icon('ArrowRight')}</button><button class="button secondary" data-action="next-player">PEMAIN BERIKUTNYA</button></div></div>`
+      : '<div class="save-panel saving"><b>Menyimpan hasil...</b><p>Tunggu konfirmasi sebelum melanjutkan.</p></div>';
+  return `${nav(isStop ? 'STOP OR GO DECISION' : 'ACT FAST CHALLENGE')}<section class="result-view ${isStop ? 'stop-result' : ''}">${confetti(isStop ? 64 : 16)}<div class="result-heading"><div class="finish-mascot">${character(state.game, isStop && state.correct < 3 ? 'encourage' : 'celebrate')}</div><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI, ${escape(state.playerName)}!</p><h1 tabindex="-1">${isStop ? 'RONDE<br><span>SELESAI!</span>' : 'AKSI<br><span>TUNTAS!</span>'}</h1><p>${isStop ? 'Setiap keputusan adalah kesempatan untuk belajar.' : 'Kamu menemukan semua tindakan yang diperlukan.'}</p>${isStop ? `<div class="stop-score"><strong>${displayedScore}<span> / ${state.rounds.length}</span></strong><p>keputusan tepat</p></div>` : ''}</div><div class="result-details">${isStop ? '<div class="learning-point"><b>Ingat sebelum bertindak</b><p>Periksa identitas, penerima, nominal, dan tujuan. Jika ada yang meragukan, berhenti dan verifikasi melalui kanal resmi.</p></div>' : `<div class="badge-label">${icon('Trophy')}${score.badge}</div><div class="result-stats"><div><span>BENAR</span><b>${stats.correct}<small> / ${state.scenario.required.length}</small></b></div><div><span>SALAH</span><b>${stats.wrong}</b></div><div><span>WAKTU</span><b>${formatTime(state.elapsed)}<small> dtk</small></b></div><div class="score-stat"><span>SKOR</span><b>${displayedScore}</b></div></div>`}${savePanel}${saveState === 'saved' ? '<p class="auto-reset">Pemain berikutnya dalam <span id="reset-count">45</span> detik.</p>' : ''}</div></section>`;
 }
 function debrief() {
   const s = state.scenario;
@@ -100,7 +127,7 @@ function debrief() {
 function render() {
   document.body.classList.remove('feedback-open');
   const views = { home, intro, 'stop-play': stopPlay, 'act-scenario': actScenario, 'act-play': actPlay, completion, result, debrief };
-  screen.innerHTML = header() + views[state.view]() + footer();
+  screen.innerHTML = header() + (booth.phase === 'active' ? views[state.view]() : boothStatus()) + footer();
   screen.dataset.view = state.view;
   screen.dataset.game = state.game || 'home';
   window.scrollTo(0, 0);
@@ -108,19 +135,101 @@ function render() {
   screen.querySelector('h1')?.focus({ preventScroll: true });
   enteredAt = performance.now();
   syncMusic();
+  if (booth.phase === 'active' && state.view === 'result') reportScore();
   if (state.view === 'intro') screen.querySelector('#player-name').focus({ preventScroll: true });
 }
-function goHome() {
+function resetHome({ clearParticipant = true, abandon = true } = {}) {
   clearTimeout(completeTimer);
+  if (abandon && state.playId && state.saveState !== 'saved') {
+    void abandonPlay(boothId, state.playId).catch(() => {});
+  }
+  if (clearParticipant) {
+    participant = null;
+    participantRequestId = null;
+  }
+  pendingPlay = null;
+  pendingActions = [];
+  actionFlush = Promise.resolve();
   state = { view: 'home', game: null };
   history.replaceState(null, '', location.pathname + location.search);
   render();
 }
+function goHome() {
+  resetHome();
+}
+async function beginPlay(game, player) {
+  const scenario = game === 'act' ? (pendingPlay?.game === game ? pendingPlay.scenario : nextAct()) : null;
+  const rounds = game === 'stop' ? (pendingPlay?.game === game ? pendingPlay.rounds : shuffle(stopScenarios).slice(0, settings.stopCount)) : null;
+  pendingPlay = pendingPlay?.game === game ? pendingPlay : { game, scenario, rounds, requestId: crypto.randomUUID() };
+  state = { view: 'home', game: null, preparing: true };
+  render();
+  try {
+    const created = await createPlay(boothId, {
+      participantId: player.participantId,
+      gameKey: game === 'stop' ? 'stop-or-go' : 'act-fast',
+      ...(scenario ? { scenarioKey: scenario.id } : {}),
+      requestId: pendingPlay.requestId,
+    });
+    pendingActions = [];
+    actionFlush = Promise.resolve();
+    state = game === 'stop'
+      ? { game, playerName: player.nickname, view: 'stop-play', rounds, index: 0, answer: null, correct: 0, playId: created.playId, saveState: 'playing' }
+      : { game, playerName: player.nickname, view: 'act-scenario', scenario, playId: created.playId, saveState: 'playing' };
+    pendingPlay = null;
+    tone(true);
+    render();
+  } catch (error) {
+    state = { view: 'home', game: null, error: error instanceof Error ? error.message : 'Permainan belum dapat dimulai.' };
+    render();
+  }
+}
 function choose(game) {
   clearTimeout(completeTimer);
+  if (participant) {
+    void beginPlay(game, participant);
+    return;
+  }
   state = { view: 'intro', game };
   tone(true);
   history.replaceState(null, '', `#${game}`);
+  render();
+}
+async function sendPendingActions() {
+  while (pendingActions.length) {
+    const action = pendingActions[0];
+    try {
+      await saveAction(boothId, state.playId, action);
+    } catch {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await saveAction(boothId, state.playId, action);
+    }
+    pendingActions.shift();
+  }
+}
+function reportAction(actionKey, value) {
+  pendingActions.push({
+    gameKey: state.game === 'stop' ? 'stop-or-go' : 'act-fast',
+    actionKey,
+    ...(value === undefined ? {} : { value }),
+  });
+  actionFlush = actionFlush.catch(() => {}).then(sendPendingActions);
+}
+async function reportScore(force = false) {
+  if (!state.playId || state.saveState === 'saved' || (state.completeStarted && !force)) return;
+  state.completeStarted = true;
+  state.saveState = 'saving';
+  if (force) render();
+  try {
+    await actionFlush;
+    await sendPendingActions();
+    const result = await completePlay(boothId, state.playId);
+    state.savedScore = result.score;
+    state.saveState = 'saved';
+    state.saveError = null;
+  } catch (error) {
+    state.saveState = 'failed';
+    state.saveError = error instanceof Error ? error.message : 'Hasil belum dapat disimpan.';
+  }
   render();
 }
 function confetti(count = 16) {
@@ -132,6 +241,7 @@ function tone(correct, celebrate = false, finish = false, reward = false) {
 }
 function respond(id, tile) {
   if (state.view !== 'act-play' || state.chosen.includes(id) || !responses.some(r => r.id === id)) return;
+  reportAction(id);
   state.chosen.push(id);
   const correct = state.scenario.required.includes(id);
   const stats = assess(state.scenario.required, state.chosen);
@@ -159,16 +269,27 @@ function respond(id, tile) {
     completeTimer = setTimeout(() => { state.view = 'result'; render(); }, 1200);
   }
 }
-document.addEventListener('submit', event => {
+document.addEventListener('submit', async event => {
   if (event.target.id !== 'player-form' || state.view !== 'intro') return;
   event.preventDefault();
   const input = event.target.elements.playerName;
   const playerName = input.value.trim();
   input.setCustomValidity(playerName ? '' : 'Isi nama panggilanmu dulu.');
   if (!event.target.reportValidity()) return;
-  if (state.game === 'stop') state = { game: 'stop', playerName, view: 'stop-play', rounds: shuffle(stopScenarios).slice(0, settings.stopCount), index: 0, answer: null, correct: 0 };
-  else state = { game: 'act', playerName, view: 'act-scenario', scenario: nextAct() };
-  tone(true); render();
+  const submit = event.target.querySelector('[type="submit"]');
+  const error = event.target.querySelector('#form-error');
+  submit.disabled = true;
+  submit.textContent = 'MENYIAPKAN...';
+  error.textContent = '';
+  participantRequestId ||= crypto.randomUUID();
+  try {
+    participant = await createParticipant(boothId, playerName, participantRequestId);
+    await beginPlay(state.game, participant);
+  } catch (caught) {
+    error.textContent = caught instanceof Error ? caught.message : 'Peserta belum dapat dibuat.';
+    submit.disabled = false;
+    submit.innerHTML = `${state.game === 'stop' ? 'MULAI MAIN!' : 'LIHAT KASUS!'}${icon('ArrowRight')}`;
+  }
 });
 document.addEventListener('input', event => {
   lastInput = performance.now();
@@ -185,9 +306,25 @@ document.addEventListener('click', event => {
     else goHome();
   }
   if (action === 'reset') document.querySelector('#reset-dialog').showModal();
-  if (action === 'cancel-reset') document.querySelector('#reset-dialog').close();
-  if (action === 'confirm-reset') { document.querySelector('#reset-dialog').close(); goHome(); }
+  if (action === 'cancel-reset') {
+    document.querySelector('#reset-dialog').close();
+    document.querySelector('#reset-dialog p').textContent = 'Permainan aktif akan ditandai sebagai ditinggalkan dan identitas pemain di layar akan dihapus.';
+  }
+  if (action === 'confirm-reset') {
+    document.querySelector('#reset-dialog').close();
+    document.querySelector('#reset-dialog p').textContent = 'Permainan aktif akan ditandai sebagai ditinggalkan dan identitas pemain di layar akan dihapus.';
+    goHome();
+  }
+  if (action === 'retry-complete') void reportScore(true);
+  if (action === 'repeat-player') resetHome({ clearParticipant: false, abandon: false });
+  if (action === 'next-player') resetHome({ clearParticipant: true, abandon: false });
+  if (action === 'force-reset') {
+    document.querySelector('#reset-dialog p').textContent = 'Hasil yang belum terkirim dapat hilang. Lanjutkan reset paksa?';
+    document.querySelector('#reset-dialog').showModal();
+  }
+  if (action === 'retry-bootstrap') void bootstrap();
   if (action === 'answer' && state.view === 'stop-play' && state.answer === null) {
+    reportAction(state.rounds[state.index].id, value);
     state.answer = value;
     const correct = value === state.rounds[state.index].answer;
     if (correct) state.correct++;
@@ -206,7 +343,7 @@ document.addEventListener('click', event => {
   if (action === 'ready' && state.view === 'act-scenario') {
     // Distribute actions across the grid; keep this order stable between cases.
     state.responseOrder = ['R1', 'R5', 'R6', 'R3', 'R7', 'R2', 'R4', 'R8'];
-    state.chosen = []; state.view = 'act-play'; tone(true); render(); state.started = performance.now();
+    state.chosen = []; state.view = 'act-play'; tone(true); render(); state.started = performance.now(); reportAction('ready');
   }
   if (action === 'respond') respond(value, target);
   if (action === 'debrief' && state.view === 'result') { state.view = 'debrief'; render(); }
@@ -242,13 +379,12 @@ window.addEventListener('hashchange', () => { const game = location.hash.slice(1
 setInterval(() => {
   const now = performance.now();
   if (state.view === 'act-play') document.querySelector('#timer').textContent = formatTime(now - state.started);
-  if (['result', 'debrief'].includes(state.view)) {
+  if (state.view === 'result' && state.saveState === 'saved') {
     const remaining = Math.max(0, Math.ceil((settings.resultResetMs - now + enteredAt) / 1000));
     const counter = document.querySelector('#reset-count');
     if (counter) counter.textContent = remaining;
     if (!remaining && !document.querySelector('dialog[open]')) {
-      if (state.view === 'result' && state.game === 'act') { state.view = 'debrief'; render(); }
-      else goHome();
+      resetHome({ clearParticipant: true, abandon: false });
       return;
     }
   }
@@ -261,5 +397,37 @@ setInterval(() => {
     document.querySelectorAll('dialog[open]').forEach(d => d.close()); goHome();
   }
 }, 100);
-const initial = location.hash.slice(1);
-if (['stop', 'act'].includes(initial)) choose(initial); else render();
+async function bootstrap() {
+  booth = { phase: 'loading', data: null, message: '' };
+  render();
+  if (!boothId) {
+    booth = { phase: 'invalid', data: null, message: '' };
+    render();
+    return;
+  }
+  try {
+    const data = await getBooth(boothId);
+    const phase = data.status === 'ACTIVE'
+      ? 'active'
+      : data.status === 'SCHEDULED'
+        ? 'scheduled'
+        : data.status === 'FINISHED'
+          ? 'finished'
+          : 'closed';
+    const schedule = data.event?.startsAt ? `Mulai ${new Date(data.event.startsAt).toLocaleString('id-ID')}.` : '';
+    booth = { phase, data, message: phase === 'scheduled' ? schedule : '' };
+    if (phase === 'active') {
+      const initial = location.hash.slice(1);
+      if (['stop', 'act'].includes(initial)) choose(initial);
+      else resetHome({ clearParticipant: true, abandon: false });
+    } else render();
+  } catch (error) {
+    booth = {
+      phase: error?.status === 404 ? 'invalid' : 'error',
+      data: null,
+      message: error instanceof Error ? error.message : 'Sesi belum dapat diperiksa.',
+    };
+    render();
+  }
+}
+void bootstrap();
