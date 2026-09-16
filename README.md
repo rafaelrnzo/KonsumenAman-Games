@@ -36,7 +36,7 @@ Atur environment variable berikut sebelum build:
 GAME_API_BASE_URL=https://alamat-api-produksi
 ```
 
-`npm run build` menulis nilai tersebut ke `public/config.mjs` lalu menjalankan test. Vercel melayani folder `public` sesuai `vercel.json`. Domain deployment resmi harus tercantum dalam `CORS_ORIGINS` backend.
+`npm run build` menulis nilai tersebut ke `public/config.mjs` lalu menjalankan test. Build preview boleh berjalan tanpa nilai ini dan akan menampilkan error konfigurasi saat link dibuka. Build production ditolak jika nilainya kosong. Vercel melayani folder `public` sesuai `vercel.json`. Domain deployment resmi harus tercantum dalam `CORS_ORIGINS` backend.
 
 ## Pemeriksaan
 
