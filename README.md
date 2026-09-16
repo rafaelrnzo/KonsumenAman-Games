@@ -1,47 +1,59 @@
-# Trial game FEKDI 2026
+# Game Zone Konsumen Aman
 
-Trial party game untuk Rafael, mengikuti masukan Hervin dan referensi Jackbox Party Pack. Dua game mengikuti brief Rev2: Stop or Go Decision dan Act Fast Challenge. Ini trial desain dan interaksi, belum build kiosk produksi.
+Klien layar sentuh untuk Sesi Game Portal Konsumen Aman. Satu deployment menyediakan Stop or Go dan Act Fast. Link dari admin menentukan sesi dengan query `?boothId=...`.
 
-## Buka preview
+## Alur booth
 
-Jalankan `python3 -m http.server 4176 --bind 127.0.0.1 --directory public`, lalu buka http://localhost:4176. Tautan game: `/#stop` dan `/#act`.
+1. Klien membaca `boothId` dan mengambil status sesi dari backend.
+2. Pemain memilih game dan mengisi nama panggilan.
+3. Backend membuat ID peserta dan ID permainan.
+4. Setiap jawaban dikirim berurutan. Backend menghitung skor akhir.
+5. Main lagi mempertahankan peserta. Pemain berikutnya, reset manual, dan reset otomatis menghapus peserta dari layar.
 
-Folder ini juga dapat dilayani sendiri oleh server HTTP statis. Semua aset, font, ikon, dan konten tersedia dalam folder yang sama. Tidak perlu backend, akun, atau internet. Membuka HTML langsung melalui `file://` tidak didukung karena menggunakan modul JavaScript.
+Link tanpa `boothId`, sesi yang belum mulai, sesi ditutup, dan sesi selesai tidak membuka permainan. Nama panggilan dan hasil disimpan di backend. Jangan gunakan data pribadi lain pada kolom nama.
 
-Mode Otomatis mengikuti lebar layar. Tombol Portrait mempersempit preview di desktop. Untuk meninjau ukuran booth, gunakan viewport 1920×1080 dan 1080×1920. Tombol layar penuh menyembunyikan toolbar preview. Suara aktif setelah interaksi pertama dan bisa dimatikan dari toolbar. Esc membuka konfirmasi reset.
+## Menjalankan lokal
 
-## Konten dan aturan
+Buat `public/config.mjs` untuk menunjuk API lokal:
 
-- `content.mjs`: 15 situasi Stop or Go, 10 kasus Act Fast, delapan tindakan, penjelasan, dan pengaturan waktu.
-- `audio.mjs`: BGM in-game sintetis dan efek suara benar, buzzer salah, serta kemenangan. Jawaban benar Act Fast memakai arpeggio berlapis; Stop or Go memakai tiga nada naik. Kedua game memakai fanfare akhir dengan bas dan akor penutup.
-- `engine.mjs`: pengacakan, penghitungan pilihan unik, dan skor.
-- `app.mjs`: alur layar, input, timer, dan reset.
-- `style.css`: layout adaptif dan visual.
-
-Pilih game langsung membuka form nama panggilan dengan petunjuk singkat. Nama hanya ada dalam memori sesi dan dihapus saat kembali ke awal. Stop or Go langsung dimulai setelah nama diisi; Act Fast membuka kasus dan menunggu Saya siap sebelum menghitung waktu. Stop or Go mengambil lima situasi unik per sesi. Act Fast menghabiskan satu kumpulan sepuluh kasus sebelum mengacak ulang, tanpa kasus berulang di perbatasan kumpulan. Timer dimulai setelah Saya siap. Setiap tindakan hanya dihitung sekali. Sesi aktif tidak memiliki batas waktu. Tanpa input selama 90 detik, sesi kembali ke awal. Layar hasil Act Fast membuka penjelasan otomatis setelah 45 detik jika belum dipilih. Tombol selesai pada penjelasan aktif setelah lima detik.
-
-Skenario dan istilah berasal dari brief pengguna. Beberapa kalimat disingkat untuk layar. Logo Konsumen Aman memakai aset asli dari BI-Portal-PeKA (`web/public/images/logo-konsumen-aman-white.png`). Tampilan memakai karakter kartun orisinal, kartu situasi dengan animasi masuk, dialog karakter yang merespons pilihan, indikator tindakan tepat, dan nada singkat. Gerakan dimatikan saat perangkat meminta reduced motion. Font Plus Jakarta Sans memakai aset lokal project, font Bungee berasal dari Google Fonts, dan ikon berasal dari Phosphor Icons. Lisensi tersedia di `assets/BUNGEE-OFL.txt` dan `assets/PHOSPHOR-LICENSE`.
-
-## Pemeriksaan
-
-Jalankan dari root repository:
-
-```sh
-npm test
+```js
+export const GAME_API_BASE_URL = "http://localhost:8000";
 ```
 
-Pemeriksaan mencakup jumlah dan mapping skenario, batas bonus waktu, badge, tap berulang, serta distribusi 200 sesi. Alur browser juga diuji untuk semua sepuluh kasus Act Fast, satu sesi penuh Stop or Go, waktu aktif di atas 90 detik, reset saat ditinggal, dan tiga ukuran layar.
+Lalu jalankan server statis dari root repo:
 
-## Sebelum digunakan di booth
+```sh
+python3 -m http.server 4176 --bind 127.0.0.1 --directory public
+```
 
-Uji keterbacaan dan jangkauan sentuh di perangkat asli, konfirmasi copy dengan pemilik materi, lalu kalibrasi target waktu 18/22 detik. Pilihan respons yang tetap bisa dihafal; amati apakah pemain memahami alasannya. Operator console, ekspor log, installer, auto-launch, dan integrasi portal tidak termasuk trial ini. Preview tidak menyimpan data pengunjung dan tidak mengubah poin atau akun Portal PeKA.
+Buka `http://localhost:4176/?boothId=ID_DARI_ADMIN`. Backend harus mengizinkan origin `http://localhost:4176` saat pengujian lokal.
 
 ## Deploy ke Vercel
 
-Impor repository ini dari GitHub. Gunakan root repository, preset Other, build command `npm test`, dan output directory `public`. Pengaturan tersedia di `vercel.json`. Tidak perlu environment variable atau database.
+Atur environment variable berikut sebelum build:
 
-## Musik dan animasi maskot
+```text
+GAME_API_BASE_URL=https://alamat-api-produksi
+```
 
-BGM lobby `assets/bgm-fekdi.mp3` diputar berulang pada volume 80% di layar utama, pengisian nama, dan briefing Act Fast. Autoplay dicoba saat halaman dibuka dan dicoba ulang setelah 0,75 detik; jika tetap diblokir browser, interaksi pertama memulai musik. Setelah permainan dimulai, musik berpindah ke aransemen sintetis yang lebih cepat agar suasana permainan berbeda dari lobby. Musik dijeda saat tab tersembunyi; tombol suara mengatur BGM dan efek suara.
+`npm run build` menulis nilai tersebut ke `public/config.mjs` lalu menjalankan test. Vercel melayani folder `public` sesuai `vercel.json`. Domain deployment resmi harus tercantum dalam `CORS_ORIGINS` backend.
 
-Tujuh animasi maskot tersedia: santai, menyapa, berpikir, benar, salah, semangat, dan selebrasi. Alternatif tangan stik dengan siku tegas dipakai dalam game. Halaman `mascot-demo.html` menyediakan tombol pembanding tangan stik dan versi lengkung awal, dengan semua ekspresi yang sama. Komponen bersama ada di `mascot.mjs`. Stop or Go dan Act Fast menggunakan reaksi jawaban, dan hasil sesi menggunakan selebrasi atau semangat.
+## Pemeriksaan
+
+```sh
+npm test
+GAME_API_BASE_URL=https://api.example.test npm run build
+```
+
+Test memeriksa konten dan skor game yang sudah ada, serta request booth untuk bootstrap, peserta, permainan, aksi, complete, dan abandon. Uji perangkat asli tetap diperlukan untuk layar sentuh, audio, layar penuh, portrait, dan landscape.
+
+## File utama
+
+- `public/app.mjs`: alur layar, retry, pergantian pemain, timer, dan reset.
+- `public/booth-api.mjs`: seluruh request publik ke backend Sesi Game.
+- `public/content.mjs`: skenario dan aturan konten.
+- `public/engine.mjs`: pengacakan dan skor tampilan.
+- `public/style.css`: layout booth adaptif.
+- `scripts/write-config.mjs`: konfigurasi base URL saat build.
+
+Skor akhir yang disimpan selalu berasal dari backend. Skor di browser hanya memberi respons langsung kepada pemain. Jika penyimpanan gagal, layar menahan hasil dan menyediakan Kirim ulang dengan ID permainan yang sama.
