@@ -350,3 +350,6 @@ dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
 .result-actions .button{min-height:54px;justify-content:center;font-size:12px;padding-inline:16px}
 .result-actions .button.secondary{background:#fff;color:var(--ink)}
 @container(max-width:600px){.brand-header>.booth-title{font-size:10px}.result-actions{grid-template-columns:1fr}.booth-state{min-height:calc(100dvh - 150px)}.booth-state h1{font-size:10cqw}}
+.game-choice.inbox-choice{background:#d9d4f4;rotate:2deg;border-radius:6% 38% 6% 6% / 6% 6% 5% 6%}
+.game-choice.inbox-choice:hover{rotate:0deg}
+.game-choice.inbox-choice .cabinet-label{transform:none}

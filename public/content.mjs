@@ -44,3 +44,15 @@ export const actScenarios = [
 ].map(s => ({ ...s, targetTime: s.required.length === 3 ? 18 : 22 }));
 
 export const settings = { stopCount: 5, abandonMs: 90_000, resultResetMs: 45_000, debriefMs: 5_000 };
+
+// Inbox Phishing: binary decision per message. The backend keeps its own copy
+// of `scam` and scores from the recorded choices, so a tampered client cannot
+// inflate a score; this copy only drives the on-screen feedback.
+export const inboxMessages = [
+  { id: 'm1', sender: 'JNE-Info', channel: 'SMS', waktu: '09:12', isi: 'Paket Anda tertahan. Bea Rp 0 wajib konfirmasi data: http://jne-resi.xyz/cek', scam: true, alasan: 'Domain aneh (jne-resi.xyz, bukan jne.co.id) dan minta konfirmasi data lewat tautan. Kurir asli tidak begitu.' },
+  { id: 'm2', sender: 'Mama', channel: 'WhatsApp', waktu: '10:03', isi: 'Nak, tolong belikan mama pulsa 50rb ya nanti mama ganti. Makasih sayang.', scam: false, alasan: 'Pesan wajar dari kontak tersimpan. Tetap konfirmasi lewat telepon kalau jumlahnya besar, tetapi ini bukan phishing.' },
+  { id: 'm3', sender: '+62 838-xxxx', channel: 'WhatsApp', waktu: '11:20', isi: 'Selamat! Anda pemenang undian BRI Rp 175jt. Klaim hadiah, buka file: Undangan.apk', scam: true, alasan: 'File .apk adalah aplikasi pencuri data. Undian yang tidak pernah kamu ikuti plus permintaan memasang aplikasi berarti penipuan.' },
+  { id: 'm4', sender: 'PLN', channel: 'SMS', waktu: '13:45', isi: 'Tagihan listrik Anda Rp 234.500 jatuh tempo hari ini. Bayar via aplikasi PLN Mobile resmi.', scam: false, alasan: 'Tidak ada tautan mencurigakan dan tidak minta data. Pesan mengarahkan ke aplikasi resmi.' },
+  { id: 'm5', sender: 'Bank-BCA', channel: 'SMS', waktu: '15:30', isi: 'NASABAH YTH, m-Banking Anda akan NONAKTIF. Aktivasi ulang: bit.ly/bca-verif2024', scam: true, alasan: 'Tautan pemendek menyembunyikan alamat asli dan ada ancaman nonaktif. Bank tidak meminta verifikasi lewat tautan SMS.' },
+  { id: 'm6', sender: 'Andi (Kantor)', channel: 'WhatsApp', waktu: '16:10', isi: 'Bro, notulen rapat tadi sudah aku share di Google Drive tim ya. Cek folder Q3.', scam: false, alasan: 'Kontak dikenal, konteks jelas, dan tidak meminta kredensial. Pesan kerja biasa.' },
+];
