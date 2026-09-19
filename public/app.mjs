@@ -40,7 +40,7 @@ function button(label, action, secondary = false) {
   return `<button class="button${secondary ? ' secondary' : ''}" data-action="${action}">${label}${icon('ArrowRight')}</button>`;
 }
 function header() {
-  return `<header class="brand-header"><button class="brand-home" data-action="home" aria-label="Kembali ke pilihan game"><img src="./assets/logo-konsumen-aman-white.png" width="193" height="63" alt="Konsumen Aman"></button><span class="booth-title">${booth.data ? escape(booth.data.name) : 'GAME ZONE'}</span><span class="arcade-wordmark">GAME ZONE</span></header>`;
+  return `<header class="brand-header"><button class="brand-home" data-action="home" aria-label="Kembali ke pilihan game"><img src="./assets/logo-konsumen-aman-white.png" width="193" height="63" alt="Konsumen Aman"></button><span class="booth-title">${booth.data ? escape(booth.data.name) : ''}</span></header>`;
 }
 function footer() {
   return `<footer class="game-footer"><span>KALAU RAGU, <b>STOP DULU!</b></span><span>${icon('HandPalm')} SENTUH & MAIN</span></footer>`;
@@ -51,11 +51,17 @@ function nav(label, extra = '') {
 function host(line, mood = '') {
   return `<div class="host-line">${character(state.game === 'act' ? 'act' : 'stop', mood)}<p>${line}</p></div>`;
 }
+const ALL_GAME_KEYS = ['stop-or-go', 'act-fast', 'inbox-phishing'];
+const GAME_KEY_BY_ID = { stop: 'stop-or-go', act: 'act-fast', inbox: 'inbox-phishing' };
+function enabledGames() {
+  const games = booth.data?.games;
+  return Array.isArray(games) && games.length ? games : ALL_GAME_KEYS;
+}
 function home() {
   return `<section class="home-view"><div class="home-hero"><p class="eyebrow">${participant ? `MAIN LAGI, ${escape(participant.nickname).toUpperCase()}?` : 'SELAMAT DATANG DI TEMPAT UJI INSTING'}</p><h1 tabindex="-1">Hmm…<br>YAKIN <span>AMAN?</span></h1><p>${state.preparing ? 'Menyiapkan permainan...' : participant ? 'Pilih game berikutnya. Identitas pemain tetap dipakai.' : 'Kelihatannya gampang.<br>Coba dulu, baru bilang.'}</p>${state.error ? `<p class="booth-error" role="alert">${escape(state.error)}</p>` : ''}</div><div class="home-games">
-  <button class="game-choice stop-choice" data-action="choose-stop"><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop', 'wave')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
-  <button class="game-choice act-choice" data-action="choose-act"><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act', 'thinking')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
-  <button class="game-choice inbox-choice" data-action="choose-inbox"><span class="cabinet-label">03 / SI PALING JELI</span><span class="choice-title">INBOX PHISHING</span><span class="character-scene">${character('stop', 'thinking')}<span class="speech-scribble">Pesan ini<br>beneran atau bukan?</span><span class="loose-prop prop-one">${icon('EnvelopeSimple')}</span><span class="loose-prop prop-two">${icon('ShieldCheck')}</span></span><span class="choice-description">Pilah pesan penipu dari pesan wajar.</span><span class="choice-meta">6 PESAN <span>1 KEPUTUSAN TIAP PESAN</span></span><span class="start-strip">AKU JELI ${icon('ArrowRight')}</span></button>
+  <button class="game-choice stop-choice" data-action="choose-stop"${enabledGames().includes('stop-or-go') ? '' : ' hidden'}><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop', 'wave')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
+  <button class="game-choice act-choice" data-action="choose-act"${enabledGames().includes('act-fast') ? '' : ' hidden'}><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act', 'thinking')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
+  <button class="game-choice inbox-choice" data-action="choose-inbox"${enabledGames().includes('inbox-phishing') ? '' : ' hidden'}><span class="cabinet-label">03 / SI PALING JELI</span><span class="choice-title">INBOX PHISHING</span><span class="character-scene">${character('stop', 'thinking')}<span class="speech-scribble">Pesan ini<br>beneran atau bukan?</span><span class="loose-prop prop-one">${icon('EnvelopeSimple')}</span><span class="loose-prop prop-two">${icon('ShieldCheck')}</span></span><span class="choice-description">Pilah pesan penipu dari pesan wajar.</span><span class="choice-meta">6 PESAN <span>1 KEPUTUSAN TIAP PESAN</span></span><span class="start-strip">AKU JELI ${icon('ArrowRight')}</span></button>
   </div><div class="menu-extras"><button data-action="music" class="back-button">♫ Putar musik</button></div></section>`;
 }
 function boothStatus() {
@@ -224,6 +230,7 @@ async function beginPlay(game, player) {
   }
 }
 function choose(game) {
+  if (!enabledGames().includes(GAME_KEY_BY_ID[game])) return;
   clearTimeout(completeTimer);
   if (participant) {
     void beginPlay(game, participant);
