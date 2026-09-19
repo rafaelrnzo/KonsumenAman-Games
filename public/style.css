@@ -353,3 +353,4 @@ dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
 .game-choice.inbox-choice{background:#d9d4f4;rotate:2deg;border-radius:6% 38% 6% 6% / 6% 6% 5% 6%}
 .game-choice.inbox-choice:hover{rotate:0deg}
 .game-choice.inbox-choice .cabinet-label{transform:none}
+.game-choice[hidden]{display:none!important}
