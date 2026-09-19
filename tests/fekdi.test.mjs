@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { stopScenarios, actScenarios, responses } from '../public/content.mjs';
+import { stopScenarios, actScenarios, responses, inboxMessages } from '../public/content.mjs';
 import { shuffle, makeBag, assess, scoreAct } from '../public/engine.mjs';
 import { audioSettings, gameTrack, musicSources } from '../public/audio.mjs';
 
@@ -54,6 +54,18 @@ test('FEKDI revision 2 content, scoring, unique attempts, and 200-session distri
       }
       assert.equal(new Set(ids).size, 10);
     }
+  }
+});
+
+test('inbox phishing is a unique set with both scam and safe messages', () => {
+  assert.equal(inboxMessages.length, 6);
+  assert.equal(new Set(inboxMessages.map(m => m.id)).size, 6);
+  assert.ok(inboxMessages.some(m => m.scam));
+  assert.ok(inboxMessages.some(m => !m.scam));
+  for (const message of inboxMessages) {
+    assert.ok(message.sender.length > 0);
+    assert.ok(message.isi.length > 0);
+    assert.ok(message.alasan.length > 0);
   }
 });
 

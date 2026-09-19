@@ -1,6 +1,6 @@
 # Game Zone Konsumen Aman
 
-Klien layar sentuh untuk Sesi Game Portal Konsumen Aman. Satu deployment menyediakan Stop or Go dan Act Fast. Link dari admin menentukan sesi dengan query `?boothId=...`.
+Klien layar sentuh untuk Sesi Game Portal Konsumen Aman. Satu deployment menyediakan Stop or Go, Act Fast, dan Inbox Phishing. Link dari admin menentukan sesi dengan query `?boothId=...`.
 
 ## Alur booth
 
