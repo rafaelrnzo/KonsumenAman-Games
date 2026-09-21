@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { stopScenarios, actScenarios, responses, inboxMessages } from '../public/content.mjs';
+import { stopScenarios, actScenarios, responses, inboxMessages, callScenario, redFlagRounds, qrScenarios, reportScenarios } from '../public/content.mjs';
 import { shuffle, makeBag, assess, scoreAct } from '../public/engine.mjs';
 import { audioSettings, gameTrack, musicSources } from '../public/audio.mjs';
 
@@ -67,6 +67,27 @@ test('inbox phishing is a unique set with both scam and safe messages', () => {
     assert.ok(message.isi.length > 0);
     assert.ok(message.alasan.length > 0);
   }
+});
+
+test('all additional simulations match the backend action contract', () => {
+  assert.ok(callScenario.message.length > 0);
+
+  const redFlags = redFlagRounds.flatMap(round => round.tokens.filter(token => token.flag));
+  assert.equal(redFlagRounds.length, 3);
+  assert.equal(redFlags.length, 12);
+  assert.equal(new Set(redFlags.map(token => token.actionKey)).size, 12);
+  assert.deepEqual(redFlags.map(token => token.actionKey), [
+    'raffi:0-1', 'raffi:1-1', 'raffi:2-1', 'raffi:3-0',
+    'bansos:0-1', 'bansos:0-3', 'bansos:0-5', 'bansos:0-7',
+    'lowongan:0-1', 'lowongan:0-3', 'lowongan:0-5', 'lowongan:0-7',
+  ]);
+
+  assert.deepEqual(qrScenarios.map(scenario => [scenario.id, scenario.safe ? 'pay' : 'stop']), [
+    ['warung', 'pay'], ['parkiran', 'stop'], ['apotek', 'pay'], ['kopi', 'stop'], ['poster', 'stop'],
+  ]);
+  assert.deepEqual(reportScenarios.map(scenario => [scenario.id, String(scenario.correctIndex)]), [
+    ['bi', '1'], ['qris', '1'], ['akun-diretas', '2'], ['undian-palsu', '2'],
+  ]);
 });
 
 test('success cues build from Stop or Go to Act Fast and finish; mute stays silent', async () => {
