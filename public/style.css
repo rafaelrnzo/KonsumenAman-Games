@@ -354,3 +354,51 @@ dialog.answer-feedback{width:min(760px,calc(100vw - 32px));max-width:760px}
 .game-choice.inbox-choice:hover{rotate:0deg}
 .game-choice.inbox-choice .cabinet-label{transform:none}
 .game-choice[hidden]{display:none!important}
+
+/* Seven-game booth menu and shared layouts for the additional simulations. */
+.home-view{display:flex!important;flex-direction:column;justify-content:flex-start;padding-block:24px 36px}
+.home-hero{text-align:center!important;margin:0 0 18px!important}
+.home-hero h1{font-size:clamp(38px,4.2cqw,68px)!important}
+.home-games{grid-template-columns:repeat(3,minmax(0,1fr));max-width:1320px!important;gap:22px!important;align-items:stretch!important;padding:12px!important}
+.game-choice{min-height:390px;margin-top:0!important;padding:20px 18px 0!important}
+.game-choice .choice-title{font-size:clamp(24px,2.5cqw,40px)!important;white-space:normal;line-height:1.08}
+.game-choice .character-scene{height:130px;margin-block:2px;gap:12px}
+.game-choice .character-scene>.toon{scale:.82;transform-origin:50% 100%}
+.game-choice .choice-description{min-height:44px;display:grid;place-items:center}
+.game-choice .start-strip{margin-inline:-18px!important;margin-top:auto;font-size:12px!important}
+.compact-choice{min-height:315px;justify-content:flex-start}
+.compact-choice .choice-icon{width:96px;height:96px;display:grid;place-items:center;margin:13px auto 20px;border:3px solid var(--ink);border-radius:50%;background:#fff8e7;box-shadow:5px 6px 0 var(--ink);rotate:-5deg}
+.compact-choice .choice-icon svg{width:54px;height:54px}
+.call-choice{background:#efbaa9}.redflag-choice{background:#ffdd72}.qris-choice{background:#a9e5d8}.report-choice{background:#c9c3f1}
+.redflag-choice,.report-choice{rotate:2deg}.qris-choice{rotate:-2deg}.compact-choice:hover{rotate:0deg}
+.home-games>.game-choice:last-child:nth-child(3n + 1){grid-column:2}
+.solo-game{flex:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:clamp(28px,5cqw,72px);align-items:center;padding:20px 2cqw 50px;max-width:1260px;width:100%;margin:auto}
+.solo-card,.solo-panel{position:relative;background:#fff8e7;color:var(--ink);border:2px solid var(--ink);border-radius:8px;padding:clamp(24px,3cqw,44px);box-shadow:8px 10px 0 #192a72}
+.solo-card{rotate:-1deg}.solo-panel{background:#101c50;color:#fff;rotate:1deg}
+.solo-card .eyebrow,.solo-panel .eyebrow{margin-bottom:12px}.solo-card h1,.solo-panel h1{font-size:clamp(30px,3.5cqw,54px);overflow-wrap:anywhere}
+.solo-card>p:not(.eyebrow),.solo-panel>p:not(.eyebrow){margin-top:16px;font-size:clamp(16px,1.3cqw,21px)}
+.solo-icon{display:grid;place-items:center;width:86px;height:86px;margin-bottom:22px;border-radius:50%;background:var(--yellow);border:3px solid var(--ink);box-shadow:4px 5px 0 var(--ink)}
+.solo-icon svg{width:46px;height:46px}.solo-subtitle{font-weight:800;color:#544c65}
+.solo-card blockquote{margin:24px 0 0;padding:22px;border-left:7px solid var(--red);background:#fff;color:var(--ink);font-size:clamp(18px,1.6cqw,26px);font-weight:750;line-height:1.5}
+.solo-hint{font-weight:700}.solo-game .decision-buttons{margin-top:24px}.solo-game .decision{min-height:145px}
+.message-head{display:flex;align-items:center;gap:14px;padding-bottom:18px;border-bottom:2px solid #192a7222}.message-head>span{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:#dae4ff}.message-head>span svg{width:28px;height:28px}.message-head div{display:flex;flex-direction:column;gap:3px}.message-head b{font-size:20px}.message-head small{color:#655f78;font-weight:650}
+.token-message{display:flex;flex-wrap:wrap;align-items:stretch;gap:5px;margin-top:22px!important;padding:20px;background:#fff;border-radius:16px;font-size:17px!important;line-height:1.55}
+.token-button{min-height:48px;border:1px solid #d8d5cf;border-radius:8px;background:#f7f5f0;color:var(--ink);padding:8px;text-align:left;font-weight:650}.token-button:hover{background:#fff0b9}.token-button.found{background:#ffdd72;border-color:#8f6900;box-shadow:inset 0 -3px 0 #d1a72a}.token-button:disabled{opacity:1;color:var(--ink)}
+.flag-progress{display:flex;align-items:baseline;gap:12px;margin:24px 0}.flag-progress b{font:400 48px Arcade}.flag-progress span{color:#d7e7ff}
+.inline-feedback{margin:22px 0;padding:18px;border:2px solid;border-radius:12px}.inline-feedback.correct{background:#143f42;border-color:var(--lime)}.inline-feedback.wrong{background:#421b33;border-color:#ff9fae}.inline-feedback b{display:block;font-size:20px}.inline-feedback p{margin-top:7px!important;line-height:1.55}
+.solo-panel>.button{width:100%;margin-top:12px}
+.qris-card dl{display:grid;gap:12px;margin:26px 0 0}.qris-card dl>div{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-top:2px solid #192a7222}.qris-card dt{color:#655f78}.qris-card dd{margin:0;text-align:right;font-weight:850}
+.report-options{display:grid;gap:13px;margin-top:24px}.report-options button{display:grid;grid-template-columns:38px 1fr;align-items:center;gap:14px;min-height:64px;padding:12px 16px;border:2px solid #52699d;border-radius:12px;background:#243a78;color:#fff;text-align:left;font-weight:750}.report-options button:hover{background:#3152aa;border-color:var(--cyan)}.report-options button>span{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--yellow);color:var(--ink);font-family:Arcade}
+.report-card blockquote{border-left-color:var(--blue)}
+@container(max-width:1100px){
+  .home-games{grid-template-columns:repeat(2,minmax(0,1fr));max-width:800px!important}
+  .game-choice{min-height:360px}.compact-choice{min-height:310px}.game-choice .choice-title{font-size:clamp(27px,5cqw,43px)!important}
+  .home-games>.game-choice:last-child:nth-child(3n + 1){grid-column:auto}.solo-game{grid-template-columns:1fr;max-width:760px;padding-inline:18px}.solo-card,.solo-panel{rotate:0deg}.solo-game .decision{min-height:150px}
+}
+@container(max-width:600px){
+  .home-games{grid-template-columns:1fr;max-width:430px!important}.game-choice{min-height:340px}.compact-choice{min-height:290px}
+  .game-choice .choice-title{font-size:clamp(27px,8cqw,40px)!important}.home-hero h1{font-size:11cqw!important}
+  .solo-game{padding:8px 4px 34px;gap:20px}.solo-card,.solo-panel{padding:22px 18px}.solo-card h1,.solo-panel h1{font-size:8cqw}
+  .solo-game .decision-buttons{grid-template-columns:1fr 1fr}.solo-game .decision{min-height:128px}.token-message{font-size:14px!important;padding:12px}.token-button{font-size:13px;min-height:44px;padding:6px}.round-track{gap:7px}.round-track span{width:30px;height:30px}
+  .qris-card dl>div{font-size:14px}.report-options button{font-size:13px}.message-head b{font-size:17px}
+}

@@ -1,6 +1,6 @@
 import { createMusic } from './music.mjs?v=backlog-3';
 import { character, react } from './mascot.mjs?v=backlog-3';
-import { stopScenarios, actScenarios, responses, inboxMessages, settings } from './content.mjs';
+import { stopScenarios, actScenarios, responses, inboxMessages, callScenario, redFlagRounds, qrScenarios, reportScenarios, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
 import { gameAudio } from './audio.mjs?v=fanfare-6';
 import { abandonPlay, completePlay, createParticipant, createPlay, getBooth, saveAction } from './booth-api.mjs';
@@ -51,8 +51,17 @@ function nav(label, extra = '') {
 function host(line, mood = '') {
   return `<div class="host-line">${character(state.game === 'act' ? 'act' : 'stop', mood)}<p>${line}</p></div>`;
 }
-const ALL_GAME_KEYS = ['stop-or-go', 'act-fast', 'inbox-phishing'];
-const GAME_KEY_BY_ID = { stop: 'stop-or-go', act: 'act-fast', inbox: 'inbox-phishing' };
+const ALL_GAME_KEYS = ['stop-or-go', 'act-fast', 'inbox-phishing', 'telepon-bodong', 'cari-red-flag', 'anti-qris-palsu', 'cara-lapor'];
+const GAME_KEY_BY_ID = { stop: 'stop-or-go', act: 'act-fast', inbox: 'inbox-phishing', call: 'telepon-bodong', redflag: 'cari-red-flag', qris: 'anti-qris-palsu', report: 'cara-lapor' };
+const GAME_INTROS = {
+  stop: { nav: 'STOP OR GO DECISION', eyebrow: 'STOP OR GO • 5 RONDE', lead: 'Baca situasi, lalu pilih STOP atau GO.', cta: 'MULAI MAIN!', mascot: 'stop' },
+  act: { nav: 'ACT FAST CHALLENGE', eyebrow: 'ACT FAST • 1 INSIDEN', lead: 'Baca kasus, lalu temukan semua tindakan tepat.', cta: 'LIHAT KASUS!', mascot: 'act' },
+  inbox: { nav: 'INBOX PHISHING', eyebrow: 'INBOX PHISHING • 6 PESAN', lead: 'Baca tiap pesan, lalu pilih PENIPUAN atau AMAN.', cta: 'MULAI MAIN!', mascot: 'stop' },
+  call: { nav: 'TELEPON BODONG', eyebrow: 'TELEPON BODONG • 1 PANGGILAN', lead: 'Hadapi penelepon mencurigakan dan ambil langkah paling aman.', cta: 'ANGKAT TANTANGAN!', mascot: 'stop' },
+  redflag: { nav: 'CARI RED FLAG', eyebrow: 'CARI RED FLAG • 3 PESAN', lead: 'Sentuh semua frasa yang menunjukkan taktik penipuan.', cta: 'MULAI MENCARI!', mascot: 'act' },
+  qris: { nav: 'ANTI QRIS PALSU', eyebrow: 'ANTI QRIS PALSU • 5 LOKASI', lead: 'Periksa merchant dan nominal sebelum memilih bayar atau berhenti.', cta: 'MULAI PERIKSA!', mascot: 'stop' },
+  report: { nav: 'CARA LAPOR', eyebrow: 'CARA LAPOR • 4 KASUS', lead: 'Pilih jalur penanganan dan pelaporan yang tepat.', cta: 'MULAI BANTU!', mascot: 'act' },
+};
 function enabledGames() {
   const games = booth.data?.games;
   return Array.isArray(games) && games.length ? games : ALL_GAME_KEYS;
@@ -62,6 +71,10 @@ function home() {
   <button class="game-choice stop-choice" data-action="choose-stop"${enabledGames().includes('stop-or-go') ? '' : ' hidden'}><span class="cabinet-label">01 / SI PALING WASPADA</span><span class="choice-title">STOP <i>or</i> GO</span><span class="character-scene">${character('stop', 'wave')}<span class="speech-scribble">Bentar.<br>Ini beneran?</span>${character('go')}</span><span class="choice-description">Insting bilang gas. Detailnya bilang apa?</span><span class="choice-meta">5 SITUASI <span>1 KEPUTUSAN TIAP RONDE</span></span><span class="start-strip">COBA INSTINGMU ${icon('ArrowRight')}</span></button>
   <button class="game-choice act-choice" data-action="choose-act"${enabledGames().includes('act-fast') ? '' : ' hidden'}><span class="cabinet-label">02 / SI PALING SIGAP</span><span class="choice-title">ACT FAST!</span><span class="character-scene">${character('act', 'thinking')}<span class="speech-scribble">Waduh.<br>Terus gimana?!</span><span class="loose-prop prop-one">${icon('LockKey')}</span><span class="loose-prop prop-two">${icon('FolderOpen')}</span></span><span class="choice-description">Sudah kejadian. Kamu mau ngapain?</span><span class="choice-meta">1 INSIDEN <span>CARI SEMUA AKSI TEPAT</span></span><span class="start-strip">AKU BISA HANDLE ${icon('ArrowRight')}</span></button>
   <button class="game-choice inbox-choice" data-action="choose-inbox"${enabledGames().includes('inbox-phishing') ? '' : ' hidden'}><span class="cabinet-label">03 / SI PALING JELI</span><span class="choice-title">INBOX PHISHING</span><span class="character-scene">${character('stop', 'thinking')}<span class="speech-scribble">Pesan ini<br>beneran atau bukan?</span><span class="loose-prop prop-one">${icon('EnvelopeSimple')}</span><span class="loose-prop prop-two">${icon('ShieldCheck')}</span></span><span class="choice-description">Pilah pesan penipu dari pesan wajar.</span><span class="choice-meta">6 PESAN <span>1 KEPUTUSAN TIAP PESAN</span></span><span class="start-strip">AKU JELI ${icon('ArrowRight')}</span></button>
+  <button class="game-choice compact-choice call-choice" data-action="choose-call"${enabledGames().includes('telepon-bodong') ? '' : ' hidden'}><span class="cabinet-label">04 / SI PALING TENANG</span><span class="choice-icon">${icon('Phone')}</span><span class="choice-title">TELEPON BODONG</span><span class="choice-description">Tolak tekanan dari penelepon palsu.</span><span class="choice-meta">1 PANGGILAN <span>1 KEPUTUSAN</span></span><span class="start-strip">HADAPI PANGGILAN ${icon('ArrowRight')}</span></button>
+  <button class="game-choice compact-choice redflag-choice" data-action="choose-redflag"${enabledGames().includes('cari-red-flag') ? '' : ' hidden'}><span class="cabinet-label">05 / SI PALING TELITI</span><span class="choice-icon">${icon('Warning')}</span><span class="choice-title">CARI RED FLAG</span><span class="choice-description">Temukan frasa berbahaya dalam pesan.</span><span class="choice-meta">3 PESAN <span>12 RED FLAG</span></span><span class="start-strip">CARI TANDANYA ${icon('ArrowRight')}</span></button>
+  <button class="game-choice compact-choice qris-choice" data-action="choose-qris"${enabledGames().includes('anti-qris-palsu') ? '' : ' hidden'}><span class="cabinet-label">06 / SI PALING CERMAT</span><span class="choice-icon">${icon('QrCode')}</span><span class="choice-title">ANTI QRIS PALSU</span><span class="choice-description">Cocokkan penerima dan nominal.</span><span class="choice-meta">5 LOKASI <span>BAYAR ATAU STOP</span></span><span class="start-strip">PERIKSA QRIS ${icon('ArrowRight')}</span></button>
+  <button class="game-choice compact-choice report-choice" data-action="choose-report"${enabledGames().includes('cara-lapor') ? '' : ' hidden'}><span class="cabinet-label">07 / SI PALING SIAP</span><span class="choice-icon">${icon('Flag')}</span><span class="choice-title">CARA LAPOR</span><span class="choice-description">Pilih kanal bantuan yang tepat.</span><span class="choice-meta">4 KASUS <span>3 PILIHAN</span></span><span class="start-strip">BANTU LAPORKAN ${icon('ArrowRight')}</span></button>
   </div><div class="menu-extras"><button data-action="music" class="back-button">♫ Putar musik</button></div></section>`;
 }
 function boothStatus() {
@@ -77,11 +90,7 @@ function boothStatus() {
   return `<section class="booth-state"><div class="completion-seal">${icon(booth.phase === 'loading' ? 'Timer' : 'Info')}</div><p class="eyebrow">${content[0]}</p><h1 tabindex="-1">${escape(content[1])}</h1><p>${escape(content[2])}</p>${booth.phase === 'error' ? '<button class="button" data-action="retry-bootstrap">COBA LAGI</button>' : ''}</section>`;
 }
 function intro() {
-  const copy = state.game === 'stop'
-    ? { nav: 'STOP OR GO DECISION', eyebrow: 'STOP OR GO • 5 RONDE', lead: 'Baca situasi, lalu pilih STOP atau GO.', cta: 'MULAI MAIN!', mascot: 'stop' }
-    : state.game === 'inbox'
-      ? { nav: 'INBOX PHISHING', eyebrow: 'INBOX PHISHING • 6 PESAN', lead: 'Baca tiap pesan, lalu pilih PENIPUAN atau AMAN.', cta: 'MULAI MAIN!', mascot: 'stop' }
-      : { nav: 'ACT FAST CHALLENGE', eyebrow: 'ACT FAST • 1 INSIDEN', lead: 'Baca kasus, lalu temukan semua tindakan tepat.', cta: 'LIHAT KASUS!', mascot: 'act' };
+  const copy = GAME_INTROS[state.game];
   return `${nav(copy.nav)}<section class="intro-view name-view"><div class="intro-copy"><p class="eyebrow">${copy.eyebrow}</p><h1 tabindex="-1">SIAPA<br><span>NAMAMU?</span></h1><p class="lead">${copy.lead}</p><form id="player-form"><label for="player-name">Nama panggilan</label><input id="player-name" name="playerName" type="text" required maxlength="30" autocomplete="off" enterkeyhint="go" aria-describedby="name-note" placeholder="Tulis namamu di sini"><p id="name-note">Nama panggilan ini disimpan bersama hasil permainan untuk Sesi Game ini.</p><p id="form-error" class="booth-error" role="alert"></p><button class="button" type="submit">${copy.cta}${icon('ArrowRight')}</button></form></div><div class="name-mascot">${character(copy.mascot, 'wave')}</div></section>`;
 }
 function caseCard(s) {
@@ -138,6 +147,31 @@ function actPlay() {
   const s = state.scenario;
   return `${nav('ACT FAST CHALLENGE')}<section class="response-view"><aside class="response-context"><span class="incident-small">${icon(s.icon)}</span><h1 tabindex="-1">${escape(s.title)}</h1><p>${escape(s.text)}</p><div class="timer-panel"><span>${icon('Timer')} WAKTU BERJALAN</span><div><b id="timer">0.0</b><span>detik</span></div><small>Tanpa batas waktu. Tetap jeli!</small></div></aside><div class="response-main"><div class="response-heading">${host('Oke, bantu aku beresin ini!', 'thinking')}<h2>LANGKAH KAMU?</h2><p>Pilih semua tindakan yang diperlukan dalam situasi ini.</p></div><div class="power-cells" aria-hidden="true">${s.required.map(() => '<span></span>').join('')}</div><div class="response-progress"><span id="progress">0 dari ${s.required.length} tindakan tepat ditemukan</span><span id="wrong-count">0 salah</span></div><div class="response-grid">${state.responseOrder.map(id => { const r = responses.find(r => r.id === id); return `<button class="response-tile" data-action="respond" data-value="${r.id}"><span class="tile-icon">${icon(r.icon)}</span><b>${r.label}</b><span class="tile-state">PILIH AKSI INI</span><span class="tile-mark"></span></button>`; }).join('')}</div><p id="response-feedback" class="response-feedback" role="status">Ada ${s.required.length} tindakan tepat. Temukan semuanya.</p></div></section>`;
 }
+function progressTrack(total) {
+  return `<div class="round-track" aria-label="Progres permainan">${Array.from({ length: total }, (_, i) => `<span class="${i < state.index ? 'done' : i === state.index ? 'current' : ''}">${i < state.index ? icon('Check') : i + 1}</span>`).join('')}</div>`;
+}
+function callPlay() {
+  const connected = state.stage === 'connected';
+  return `${nav('TELEPON BODONG')}<section class="solo-game"><div class="solo-card call-card"><span class="solo-icon">${icon(connected ? 'PhoneCall' : 'Phone')}</span><p class="eyebrow">${connected ? 'PANGGILAN TERSAMBUNG' : 'PANGGILAN MASUK'}</p><h1 tabindex="-1">${escape(callScenario.caller)}</h1><p class="solo-subtitle">${escape(callScenario.claim)}</p><blockquote>${escape(callScenario.message)}</blockquote>${connected ? `<p class="solo-hint">Penelepon terus menekan agar kamu bertindak cepat. Apa keputusanmu?</p><div class="decision-buttons"><button class="decision stop" data-action="call-decision" data-value="hang-up">${icon('X')}<b>TUTUP</b><span>Verifikasi lewat kanal resmi</span></button><button class="decision go" data-action="call-decision" data-value="continue">${icon('PhoneCall')}<b>LANJUT</b><span>Dengarkan permintaannya</span></button></div>` : `<p class="solo-hint">Nomor belum tersimpan. Kamu tidak wajib mengangkatnya.</p><div class="decision-buttons"><button class="decision stop" data-action="call-decision" data-value="reject">${icon('X')}<b>TOLAK</b><span>Hentikan sebelum tersambung</span></button><button class="decision go" data-action="call-answer">${icon('Phone')}<b>TERIMA</b><span>Dengarkan isi panggilan</span></button></div>`}</div></section>`;
+}
+function redFlagPlay() {
+  const round = redFlagRounds[state.index];
+  const flags = round.tokens.filter(token => token.flag);
+  const foundHere = flags.filter(token => state.found.includes(token.actionKey)).length;
+  return `${nav('CARI RED FLAG', `<span class="round-count">DITEMUKAN <b>${state.found.length}</b> / 12</span>`)}${progressTrack(redFlagRounds.length)}<section class="solo-game"><div class="solo-card message-card"><div class="message-head"><span>${icon('ChatCircleText')}</span><div><b>${escape(round.profileName)}</b><small>${escape(round.number)} · ${escape(round.channel)}</small></div></div><p class="token-message">${round.tokens.map((token, index) => `<button data-action="redflag-token" data-value="${index}" class="token-button${token.actionKey && state.found.includes(token.actionKey) ? ' found' : ''}"${token.actionKey && state.found.includes(token.actionKey) ? ' disabled' : ''}>${escape(token.text)}</button>`).join('')}</p></div><aside class="solo-panel"><p class="eyebrow">RONDE ${state.index + 1} DARI ${redFlagRounds.length}</p><h1 tabindex="-1">TEMUKAN<br><span>4 RED FLAG</span></h1><p>Sentuh frasa yang berisi klaim palsu, desakan, atau permintaan berisiko.</p><div class="flag-progress"><b>${foundHere}/4</b><span>ditemukan di pesan ini</span></div>${state.feedback ? `<div class="inline-feedback ${state.feedback.correct ? 'correct' : 'wrong'}" role="status"><b>${state.feedback.correct ? 'Tepat!' : 'Belum tepat'}</b><p>${escape(state.feedback.text)}</p></div>` : ''}${foundHere === flags.length ? button(state.index === redFlagRounds.length - 1 ? 'LIHAT HASIL' : 'PESAN BERIKUTNYA', 'next-redflag') : ''}</aside></section>`;
+}
+function qrisPlay() {
+  const scenario = qrScenarios[state.index];
+  const answered = state.answer !== null;
+  const rupiah = value => `Rp${value.toLocaleString('id-ID')}`;
+  return `${nav('ANTI QRIS PALSU', `<span class="round-count">TEPAT <b>${state.correct}</b> / ${qrScenarios.length}</span>`)}${progressTrack(qrScenarios.length)}<section class="solo-game"><div class="solo-card qris-card"><span class="solo-icon">${icon('QrCode')}</span><p class="eyebrow">LOKASI ${state.index + 1}</p><h1 tabindex="-1">${escape(scenario.location)}</h1><p>${escape(scenario.detail)}</p><dl><div><dt>Nama penerima</dt><dd>${escape(scenario.merchant)}</dd></div><div><dt>Nominal tampil</dt><dd>${rupiah(scenario.amount)}</dd></div><div><dt>Tagihan</dt><dd>${rupiah(scenario.expected)}</dd></div></dl></div><aside class="solo-panel"><p class="eyebrow">APA KEPUTUSANMU?</p><h1>${answered ? (state.answer === (scenario.safe ? 'pay' : 'stop') ? 'TEPAT!' : 'PERIKSA LAGI') : 'BAYAR<br><span>ATAU STOP?</span>'}</h1>${answered ? `<div class="inline-feedback ${state.answer === (scenario.safe ? 'pay' : 'stop') ? 'correct' : 'wrong'}"><p>${escape(scenario.explanation)}</p></div>${button(state.index === qrScenarios.length - 1 ? 'LIHAT HASIL' : 'LOKASI BERIKUTNYA', 'next-qris')}` : `<p>Pastikan penerima dan nominal sesuai konteks transaksi.</p><div class="decision-buttons"><button class="decision stop" data-action="qris-answer" data-value="stop">${icon('HandPalm')}<b>STOP</b><span>Jangan bayar</span></button><button class="decision go" data-action="qris-answer" data-value="pay">${icon('CheckCircle')}<b>BAYAR</b><span>Lanjutkan transaksi</span></button></div>`}</aside></section>`;
+}
+function reportPlay() {
+  const scenario = reportScenarios[state.index];
+  const answered = state.answer !== null;
+  const correct = Number(state.answer) === scenario.correctIndex;
+  return `${nav('CARA LAPOR', `<span class="round-count">TEPAT <b>${state.correct}</b> / ${reportScenarios.length}</span>`)}${progressTrack(reportScenarios.length)}<section class="solo-game"><div class="solo-card report-card"><div class="message-head"><span>${icon('ChatCircleText')}</span><div><b>${escape(scenario.sender)}</b><small>${escape(scenario.fraudType)}</small></div></div><blockquote>${escape(scenario.message)}</blockquote></div><aside class="solo-panel report-panel"><p class="eyebrow">KASUS ${state.index + 1} DARI ${reportScenarios.length}</p><h1 tabindex="-1">BANTU PILIH<br><span>LANGKAH TEPAT</span></h1>${answered ? `<div class="inline-feedback ${correct ? 'correct' : 'wrong'}"><b>${correct ? 'Tepat!' : 'Belum tepat'}</b><p>${escape(scenario.explanation)}</p></div>${button(state.index === reportScenarios.length - 1 ? 'LIHAT HASIL' : 'KASUS BERIKUTNYA', 'next-report')}` : `<div class="report-options">${scenario.choices.map((choice, index) => `<button data-action="report-answer" data-value="${index}"><span>${index + 1}</span>${escape(choice)}</button>`).join('')}</div>`}</aside></section>`;
+}
 function completion() {
   return `<section class="completion-view">${confetti()}<div class="finish-mascot">${character('act', 'celebrate')}</div><div class="completion-seal">${icon('Check')}</div><p class="eyebrow">SEMUA TINDAKAN TEPAT DITEMUKAN</p><h1 tabindex="-1">MISSION<br><span>COMPLETE!</span></h1><p>Waktu berhenti di <b>${formatTime(state.elapsed)} detik</b>.</p></section>`;
 }
@@ -151,8 +185,20 @@ function inboxResult() {
   const displayedScore = state.savedScore ?? state.correct;
   return `${nav('INBOX PHISHING')}<section class="result-view stop-result">${confetti(48)}<div class="result-heading"><div class="finish-mascot">${character('stop', state.correct < state.rounds.length ? 'encourage' : 'celebrate')}</div><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI, ${escape(state.playerName)}!</p><h1 tabindex="-1">INBOX<br><span>SELESAI!</span></h1><p>Setiap pesan adalah latihan untuk dunia nyata.</p><div class="stop-score"><strong>${displayedScore}<span> / ${state.rounds.length}</span></strong><p>pesan tepat</p></div></div><div class="result-details"><div class="learning-point"><b>Sebelum percaya</b><p>Periksa pengirim, domain tautan, dan permintaan datanya. Kalau ragu, jangan klik dan jangan balas.</p></div>${savePanelHtml(false)}${state.saveState === 'saved' ? '<p class="auto-reset">Pemain berikutnya dalam <span id="reset-count">45</span> detik.</p>' : ''}</div></section>`;
 }
+function simpleResult() {
+  const details = {
+    call: { nav: 'TELEPON BODONG', title: 'PANGGILAN<br><span>SELESAI!</span>', total: 1, unit: 'keputusan tepat', lesson: callScenario.explanation },
+    redflag: { nav: 'CARI RED FLAG', title: 'SEMUA TANDA<br><span>DITEMUKAN!</span>', total: 12, unit: 'red flag ditemukan', lesson: 'Klaim identitas, hadiah mendadak, biaya di depan, tekanan waktu, tautan asing, dan permintaan OTP adalah tanda bahaya.' },
+    qris: { nav: 'ANTI QRIS PALSU', title: 'QRIS<br><span>DIPERIKSA!</span>', total: qrScenarios.length, unit: 'keputusan tepat', lesson: 'Cocokkan nama penerima dan nominal, lalu konfirmasi kepada petugas atau kasir sebelum membayar.' },
+    report: { nav: 'CARA LAPOR', title: 'SIAP<br><span>MELAPOR!</span>', total: reportScenarios.length, unit: 'kasus tepat', lesson: 'Simpan bukti, hubungi penyedia jasa secepatnya, dan gunakan kanal pelaporan resmi sesuai jenis masalah.' },
+  }[state.game];
+  const localScore = state.game === 'redflag' ? state.found.length : state.correct;
+  const displayedScore = state.savedScore ?? localScore;
+  return `${nav(details.nav)}<section class="result-view stop-result">${confetti(48)}<div class="result-heading"><div class="finish-mascot">${character(state.game === 'report' ? 'act' : 'stop', displayedScore < details.total ? 'encourage' : 'celebrate')}</div><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI, ${escape(state.playerName)}!</p><h1 tabindex="-1">${details.title}</h1><div class="stop-score"><strong>${displayedScore}<span> / ${details.total}</span></strong><p>${details.unit}</p></div></div><div class="result-details"><div class="learning-point"><b>Bekal utama</b><p>${escape(details.lesson)}</p></div>${savePanelHtml(false)}${state.saveState === 'saved' ? '<p class="auto-reset">Pemain berikutnya dalam <span id="reset-count">45</span> detik.</p>' : ''}</div></section>`;
+}
 function result() {
   if (state.game === 'inbox') return inboxResult();
+  if (!['stop', 'act'].includes(state.game)) return simpleResult();
   const isStop = state.game === 'stop';
   const stats = isStop ? null : assess(state.scenario.required, state.chosen);
   const score = isStop ? null : scoreAct(state.elapsed, stats.wrong, state.scenario.targetTime);
@@ -166,7 +212,7 @@ function debrief() {
 }
 function render() {
   document.body.classList.remove('feedback-open');
-  const views = { home, intro, 'stop-play': stopPlay, 'inbox-play': inboxPlay, 'act-scenario': actScenario, 'act-play': actPlay, completion, result, debrief };
+  const views = { home, intro, 'stop-play': stopPlay, 'inbox-play': inboxPlay, 'act-scenario': actScenario, 'act-play': actPlay, 'call-play': callPlay, 'redflag-play': redFlagPlay, 'qris-play': qrisPlay, 'report-play': reportPlay, completion, result, debrief };
   screen.innerHTML = header() + (booth.phase === 'active' ? views[state.view]() : boothStatus()) + footer();
   screen.dataset.view = state.view;
   screen.dataset.game = state.game || 'home';
@@ -210,17 +256,20 @@ async function beginPlay(game, player) {
   try {
     const created = await createPlay(boothId, {
       participantId: player.participantId,
-      gameKey: game === 'stop' ? 'stop-or-go' : game === 'inbox' ? 'inbox-phishing' : 'act-fast',
+      gameKey: GAME_KEY_BY_ID[game],
       ...(scenario ? { scenarioKey: scenario.id } : {}),
       requestId: pendingPlay.requestId,
     });
     pendingActions = [];
     actionFlush = Promise.resolve();
-    state = game === 'stop'
-      ? { game, playerName: player.nickname, view: 'stop-play', rounds, index: 0, answer: null, correct: 0, playId: created.playId, saveState: 'playing' }
-      : game === 'inbox'
-        ? { game, playerName: player.nickname, view: 'inbox-play', rounds, index: 0, answer: null, correct: 0, playId: created.playId, saveState: 'playing' }
-        : { game, playerName: player.nickname, view: 'act-scenario', scenario, playId: created.playId, saveState: 'playing' };
+    const shared = { game, playerName: player.nickname, playId: created.playId, saveState: 'playing' };
+    if (game === 'stop') state = { ...shared, view: 'stop-play', rounds, index: 0, answer: null, correct: 0 };
+    else if (game === 'inbox') state = { ...shared, view: 'inbox-play', rounds, index: 0, answer: null, correct: 0 };
+    else if (game === 'act') state = { ...shared, view: 'act-scenario', scenario };
+    else if (game === 'call') state = { ...shared, view: 'call-play', stage: 'ringing', correct: 0 };
+    else if (game === 'redflag') state = { ...shared, view: 'redflag-play', index: 0, found: [], feedback: null };
+    else if (game === 'qris') state = { ...shared, view: 'qris-play', index: 0, answer: null, correct: 0 };
+    else state = { ...shared, view: 'report-play', index: 0, answer: null, correct: 0 };
     pendingPlay = null;
     tone(true);
     render();
@@ -255,7 +304,7 @@ async function sendPendingActions() {
 }
 function reportAction(actionKey, value) {
   pendingActions.push({
-    gameKey: state.game === 'stop' ? 'stop-or-go' : state.game === 'inbox' ? 'inbox-phishing' : 'act-fast',
+    gameKey: GAME_KEY_BY_ID[state.game],
     actionKey,
     ...(value === undefined ? {} : { value }),
   });
@@ -335,7 +384,7 @@ document.addEventListener('submit', async event => {
   } catch (caught) {
     error.textContent = caught instanceof Error ? caught.message : 'Peserta belum dapat dibuat.';
     submit.disabled = false;
-    submit.innerHTML = `${state.game === 'act' ? 'LIHAT KASUS!' : 'MULAI MAIN!'}${icon('ArrowRight')}`;
+    submit.innerHTML = `${GAME_INTROS[state.game]?.cta || 'MULAI MAIN!'}${icon('ArrowRight')}`;
   }
 });
 document.addEventListener('input', event => {
@@ -349,8 +398,12 @@ document.addEventListener('click', event => {
   if (action === 'choose-stop') choose('stop');
   if (action === 'choose-act') choose('act');
   if (action === 'choose-inbox') choose('inbox');
+  if (action === 'choose-call') choose('call');
+  if (action === 'choose-redflag') choose('redflag');
+  if (action === 'choose-qris') choose('qris');
+  if (action === 'choose-report') choose('report');
   if (action === 'home') {
-    if (['stop-play', 'inbox-play', 'act-play', 'act-scenario', 'completion'].includes(state.view)) document.querySelector('#reset-dialog').showModal();
+    if (['stop-play', 'inbox-play', 'act-play', 'act-scenario', 'call-play', 'redflag-play', 'qris-play', 'report-play', 'completion'].includes(state.view)) document.querySelector('#reset-dialog').showModal();
     else goHome();
   }
   if (action === 'reset') document.querySelector('#reset-dialog').showModal();
@@ -406,6 +459,80 @@ document.addEventListener('click', event => {
     else { state.index++; state.answer = null; }
     render();
   }
+  if (action === 'call-answer' && state.view === 'call-play' && state.stage === 'ringing') {
+    state.stage = 'connected';
+    tone(true);
+    render();
+  }
+  if (action === 'call-decision' && state.view === 'call-play') {
+    reportAction('decision', value);
+    state.correct = ['reject', 'hang-up'].includes(value) ? 1 : 0;
+    state.view = 'result';
+    tone(Boolean(state.correct), Boolean(state.correct), true);
+    render();
+  }
+  if (action === 'redflag-token' && state.view === 'redflag-play') {
+    const token = redFlagRounds[state.index].tokens[Number(value)];
+    if (!token) return;
+    if (token.flag && !state.found.includes(token.actionKey)) {
+      state.found.push(token.actionKey);
+      reportAction(token.actionKey, 'flag');
+      state.feedback = { correct: true, text: token.why };
+      tone(true, true, false, true);
+    } else if (!token.flag) {
+      state.feedback = { correct: false, text: 'Frasa ini belum menunjukkan taktik penipuan. Cari klaim identitas, tekanan, tautan, atau permintaan data.' };
+      tone(false);
+    }
+    render();
+  }
+  if (action === 'next-redflag' && state.view === 'redflag-play') {
+    if (state.index === redFlagRounds.length - 1) {
+      state.view = 'result';
+      tone(true, true, true);
+    } else {
+      state.index++;
+      state.feedback = null;
+    }
+    render();
+  }
+  if (action === 'qris-answer' && state.view === 'qris-play' && state.answer === null) {
+    const scenario = qrScenarios[state.index];
+    state.answer = value;
+    reportAction(scenario.id, value);
+    const correct = value === (scenario.safe ? 'pay' : 'stop');
+    if (correct) state.correct++;
+    tone(correct, false, false, true);
+    render();
+  }
+  if (action === 'next-qris' && state.view === 'qris-play' && state.answer !== null) {
+    if (state.index === qrScenarios.length - 1) {
+      state.view = 'result';
+      tone(true, true, true);
+    } else {
+      state.index++;
+      state.answer = null;
+    }
+    render();
+  }
+  if (action === 'report-answer' && state.view === 'report-play' && state.answer === null) {
+    const scenario = reportScenarios[state.index];
+    state.answer = value;
+    reportAction(scenario.id, value);
+    const correct = Number(value) === scenario.correctIndex;
+    if (correct) state.correct++;
+    tone(correct, false, false, true);
+    render();
+  }
+  if (action === 'next-report' && state.view === 'report-play' && state.answer !== null) {
+    if (state.index === reportScenarios.length - 1) {
+      state.view = 'result';
+      tone(true, true, true);
+    } else {
+      state.index++;
+      state.answer = null;
+    }
+    render();
+  }
   if (action === 'ready' && state.view === 'act-scenario') {
     // Distribute actions across the grid; keep this order stable between cases.
     state.responseOrder = ['R1', 'R5', 'R6', 'R3', 'R7', 'R2', 'R4', 'R8'];
@@ -441,7 +568,7 @@ document.addEventListener('keydown', event => {
   lastInput = performance.now();
   if (event.key === 'Escape' && !document.querySelector('dialog[open]') && state.view !== 'home') document.querySelector('#reset-dialog').showModal();
 });
-window.addEventListener('hashchange', () => { const game = location.hash.slice(1); if (['stop', 'act', 'inbox'].includes(game)) choose(game); else goHome(); });
+window.addEventListener('hashchange', () => { const game = location.hash.slice(1); if (Object.hasOwn(GAME_KEY_BY_ID, game)) choose(game); else goHome(); });
 setInterval(() => {
   const now = performance.now();
   if (state.view === 'act-play') document.querySelector('#timer').textContent = formatTime(now - state.started);
@@ -484,7 +611,7 @@ async function bootstrap() {
     booth = { phase, data, message: phase === 'scheduled' ? schedule : '' };
     if (phase === 'active') {
       const initial = location.hash.slice(1);
-      if (['stop', 'act', 'inbox'].includes(initial)) choose(initial);
+      if (Object.hasOwn(GAME_KEY_BY_ID, initial)) choose(initial);
       else resetHome({ clearParticipant: true, abandon: false });
     } else render();
   } catch (error) {

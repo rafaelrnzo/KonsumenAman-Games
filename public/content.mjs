@@ -56,3 +56,70 @@ export const inboxMessages = [
   { id: 'm5', sender: 'Bank-BCA', channel: 'SMS', waktu: '15:30', isi: 'NASABAH YTH, m-Banking Anda akan NONAKTIF. Aktivasi ulang: bit.ly/bca-verif2024', scam: true, alasan: 'Tautan pemendek menyembunyikan alamat asli dan ada ancaman nonaktif. Bank tidak meminta verifikasi lewat tautan SMS.' },
   { id: 'm6', sender: 'Andi (Kantor)', channel: 'WhatsApp', waktu: '16:10', isi: 'Bro, notulen rapat tadi sudah aku share di Google Drive tim ya. Cek folder Q3.', scam: false, alasan: 'Kontak dikenal, konteks jelas, dan tidak meminta kredensial. Pesan kerja biasa.' },
 ];
+
+export const callScenario = {
+  caller: '+62 811-2000-xxxx',
+  claim: 'Mengaku Divisi Keamanan Bank Indonesia',
+  message: 'Rekening Anda terindikasi transaksi mencurigakan dan akan diblokir dalam 1x24 jam.',
+  explanation: 'Bank Indonesia bukan bank umum dan tidak mengurus rekening pribadi nasabah. Tutup panggilan, jangan berikan OTP, PIN, kata sandi, atau data kartu, lalu verifikasi lewat kanal resmi yang Anda cari sendiri.',
+};
+
+export const redFlagRounds = [
+  {
+    id: 'raffi', profileName: 'Tim Apresiasi Pelanggan', number: '+62 813-2288-xxxx', channel: 'WhatsApp',
+    tokens: [
+      { text: 'Selamat malam, kami dari ' },
+      { text: 'tim resmi program loyalitas bank Anda', flag: true, actionKey: 'raffi:0-1', why: 'Klaim identitas belum terbukti. Verifikasi program lewat aplikasi atau nomor resmi bank.' },
+      { text: '. Kakak terpilih menang ' },
+      { text: 'apresiasi pelanggan senilai Rp 2.500.000', flag: true, actionKey: 'raffi:1-1', why: 'Tawaran hadiah belum terverifikasi.' },
+      { text: '. Buat cairin, transfer dulu ' },
+      { text: 'biaya admin Rp 500rb', flag: true, actionKey: 'raffi:2-1', why: 'Hadiah asli tidak meminta pembayaran di depan.' },
+      { text: '. ' },
+      { text: 'Jangan bilang siapa-siapa', flag: true, actionKey: 'raffi:3-0', why: 'Larangan bertanya kepada orang lain adalah taktik agar modus tidak ketahuan.' },
+      { text: '.' },
+    ],
+  },
+  {
+    id: 'bansos', profileName: 'Info Bansos', number: '+62 838-9910-xxxx', channel: 'SMS',
+    tokens: [
+      { text: 'Selamat! Anda terdaftar penerima ' },
+      { text: 'bantuan periode ini sebesar Rp 600.000', flag: true, actionKey: 'bansos:0-1', why: 'Iming-iming uang tanpa pernah mendaftar perlu dicurigai.' },
+      { text: '. Segera daftar dalam ' },
+      { text: '30 menit', flag: true, actionKey: 'bansos:0-3', why: 'Tekanan waktu dipakai agar Anda panik.' },
+      { text: ' di ' },
+      { text: 'https://layanan-bantuan.example/verifikasi', flag: true, actionKey: 'bansos:0-5', why: 'Alamat ini bukan kanal pemerintah yang terverifikasi.' },
+      { text: ' dan ' },
+      { text: 'masukkan kode OTP', flag: true, actionKey: 'bansos:0-7', why: 'OTP tidak boleh diberikan kepada pengirim pesan.' },
+      { text: '.' },
+    ],
+  },
+  {
+    id: 'lowongan', profileName: 'HRD PT Maju', number: '+62 812-7745-xxxx', channel: 'Pesan langsung',
+    tokens: [
+      { text: 'Halo, saya ' },
+      { text: 'HRD PT Maju Jaya', flag: true, actionKey: 'lowongan:0-1', why: 'Pengirim mengaku perekrut padahal Anda tidak pernah melamar.' },
+      { text: '. Anda lolos kerja ' },
+      { text: 'tanpa wawancara atau pemeriksaan pengalaman', flag: true, actionKey: 'lowongan:0-3', why: 'Proses seleksi dilewati agar tawaran cepat diterima.' },
+      { text: '. Cukup ' },
+      { text: 'bayar biaya admin Rp 250rb', flag: true, actionKey: 'lowongan:0-5', why: 'Lowongan asli tidak meminta pembayaran di depan.' },
+      { text: '. Balas cepat, ' },
+      { text: 'kuota terbatas', flag: true, actionKey: 'lowongan:0-7', why: 'Desakan ini menciptakan rasa takut kehilangan kesempatan.' },
+      { text: '!' },
+    ],
+  },
+];
+
+export const qrScenarios = [
+  { id: 'warung', location: 'Warung Makan Pak Budi', detail: 'Satu porsi makan Rp25.000. QR berada pada dudukan akrilik di meja.', merchant: 'Warung Makan Pak Budi', amount: 25000, expected: 25000, safe: true, explanation: 'Kasir mengonfirmasi penerima dan nominal sesuai pesanan.' },
+  { id: 'parkiran', location: 'Parkiran Mall Grand City', detail: 'Tarif parkir Rp5.000. Tepi stiker lama sedikit terlihat.', merchant: 'PT Digital Pay Nusantara', amount: 5000, expected: 5000, safe: false, explanation: 'Petugas tidak mengenali penerima. Pembayaran harus dihentikan.' },
+  { id: 'apotek', location: 'Apotek Sehat Farma', detail: 'Kasir menunjukkan QR. Harga pada struk Rp147.500.', merchant: 'CV Sehat Sentosa', amount: 147500, expected: 147500, safe: true, explanation: 'Nama legal dapat berbeda dari nama toko. Kasir mengonfirmasi identitas usaha dan nominal.' },
+  { id: 'kopi', location: 'Pedagang Kopi', detail: 'Pesanan kopimu Rp15.000.', merchant: 'Kopi Pak Agus', amount: 150000, expected: 15000, safe: false, explanation: 'Nama merchant benar tidak cukup. Nominal Rp150.000 berbeda dari harga Rp15.000.' },
+  { id: 'poster', location: 'Poster Donasi', detail: 'Poster publik mengajak donasi Rp50.000. Identitas organisasi tidak jelas.', merchant: 'Top Up Akun Digital', amount: 50000, expected: 50000, safe: false, explanation: 'Penerima tidak terkait organisasi yang dapat diverifikasi.' },
+];
+
+export const reportScenarios = [
+  { id: 'bi', sender: 'Tante Rina', fraudType: 'Mengatasnamakan BI', message: 'Orang yang mengaku dari BI meminta transfer biaya administrasi agar rekening tidak diblokir. Harus lapor ke mana?', choices: ['Lapor ke polisi langsung', 'Jangan transfer, simpan bukti, lalu verifikasi ke BI Bicara 131', 'Blokir saja nomornya'], correctIndex: 1, explanation: 'Hentikan interaksi dan simpan bukti. Gunakan BI Bicara 131 untuk informasi atau pengaduan terkait BI.' },
+  { id: 'qris', sender: 'Abang Yusuf', fraudType: 'Penipuan QRIS', message: 'Uang parkir masuk ke rekening orang lain karena QR palsu. Apa yang harus dilakukan?', choices: ['Scan ulang QR yang sama', 'Hubungi Bank atau PJP, simpan bukti, lalu lapor ke IASC dan polisi', 'Lapor ke RT atau RW'], correctIndex: 1, explanation: 'Segera hubungi Bank atau PJP dan lapor ke IASC untuk jalur finansial. Buat Laporan Polisi bila perlu proses hukum.' },
+  { id: 'akun-diretas', sender: 'Dinda', fraudType: 'Akun Medsos Diretas', message: 'Akun Instagram diretas dan pelaku meminta tebusan. Apa langkah yang tepat?', choices: ['Bayar agar cepat selesai', 'Buat akun baru saja', 'Pulihkan lewat platform, amankan email dan sesi, lalu laporkan pemerasan'], correctIndex: 2, explanation: 'Pulihkan akun lewat jalur resmi, amankan email, keluarkan sesi lain, aktifkan MFA, dan jangan bayar tebusan.' },
+  { id: 'undian-palsu', sender: 'Om Hendra', fraudType: 'SMS Undian Palsu', message: 'SMS undian meminta biaya admin Rp150.000 agar hadiah cair. Apa yang harus dilakukan?', choices: ['Transfer untuk mengecek', 'Telepon nomor dalam SMS', 'Jangan transfer. Simpan SMS dan laporkan nomor ke AduanNomor'], correctIndex: 2, explanation: 'Undian yang meminta biaya admin adalah tanda penipuan. Jangan transfer atau menghubungi nomor tersebut.' },
+];
