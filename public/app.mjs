@@ -3,6 +3,8 @@ import { character, react } from './mascot.mjs?v=backlog-3';
 import { stopScenarios, actScenarios, responses, inboxMessages, callScenario, redFlagRounds, qrScenarios, reportScenarios, settings } from './content.mjs';
 import { shuffle, makeBag, assess, scoreAct, formatTime } from './engine.mjs';
 import { gameAudio } from './audio.mjs?v=fanfare-6';
+import { SIMULATION_PORTAL_URL } from './config.mjs';
+import { isPortalMessage, portalGameUrl } from './portal-bridge.mjs';
 import { abandonPlay, completePlay, createParticipant, createPlay, getBooth, saveAction } from './booth-api.mjs';
 
 const screen = document.querySelector('#screen');
@@ -33,7 +35,7 @@ function syncMusic() {
   const menuMusic = ['home', 'intro', 'act-scenario'].includes(state.view);
   music.setEnabled(sound && menuMusic);
   gameAudio.setEnabled(sound);
-  gameAudio.setMusicEnabled(sound && !menuMusic && !document.hidden);
+  gameAudio.setMusicEnabled(sound && !menuMusic && state.view !== 'portal-play' && !document.hidden);
 }
 
 function button(label, action, secondary = false) {
@@ -197,6 +199,7 @@ function simpleResult() {
   return `${nav(details.nav)}<section class="result-view stop-result">${confetti(48)}<div class="result-heading"><div class="finish-mascot">${character(state.game === 'report' ? 'act' : 'stop', displayedScore < details.total ? 'encourage' : 'celebrate')}</div><div class="result-seal">${icon('ShieldCheck')}</div><p class="eyebrow">TANTANGAN SELESAI, ${escape(state.playerName)}!</p><h1 tabindex="-1">${details.title}</h1><div class="stop-score"><strong>${displayedScore}<span> / ${details.total}</span></strong><p>${details.unit}</p></div></div><div class="result-details"><div class="learning-point"><b>Bekal utama</b><p>${escape(details.lesson)}</p></div>${savePanelHtml(false)}${state.saveState === 'saved' ? '<p class="auto-reset">Pemain berikutnya dalam <span id="reset-count">45</span> detik.</p>' : ''}</div></section>`;
 }
 function result() {
+  if (state.portal) return portalResult();
   if (state.game === 'inbox') return inboxResult();
   if (!['stop', 'act'].includes(state.game)) return simpleResult();
   const isStop = state.game === 'stop';
@@ -210,9 +213,29 @@ function debrief() {
   const s = state.scenario;
   return `${nav('ACT FAST CHALLENGE')}<section class="debrief-view"><div class="debrief-heading"><p class="eyebrow">BEKAL UNTUK DUNIA NYATA</p><h1 tabindex="-1">BAWA PULANG<br><span>ILMUNYA!</span></h1><p class="lead">${escape(s.explanation)}</p></div><div class="action-recap">${s.required.map(id => {const r = responses.find(r => r.id === id); return `<div>${icon(r.icon)}<section><h2>${r.label}</h2><p>${r.detail}</p></section>${icon('CheckCircle')}</div>`;}).join('')}</div><div class="debrief-end"><p>Kalau ragu, STOP dulu.<br><b>Kalau sudah terjadi, bertindak tepat.</b></p><button id="finish" class="button" data-action="home" disabled>Selesai <span id="debrief-count">(5)</span>${icon('ArrowRight')}</button></div><p class="auto-reset">Kembali ke awal dalam <span id="reset-count">45</span> detik.</p></section>`;
 }
+function portalPlay() {
+  const url = portalGameUrl(SIMULATION_PORTAL_URL, GAME_KEY_BY_ID[state.game], state.playId);
+  return `${nav(GAME_INTROS[state.game].nav)}<iframe id="portal-simulation" src="${escape(url)}" title="Simulasi Portal Konsumen Aman" allow="autoplay; fullscreen" referrerpolicy="strict-origin" style="display:block;width:100%;height:calc(100dvh - 150px);min-height:600px;border:0;border-radius:18px;background:#f5f7fb"></iframe>`;
+}
+function portalResult() {
+  return `${nav(GAME_INTROS[state.game].nav)}<section class="result-view stop-result"><div class="result-heading"><p class="eyebrow">SIMULASI SELESAI, ${escape(state.playerName)}!</p><h1 tabindex="-1">HASIL<br><span>LATIHANMU</span></h1>${state.saveState === 'saved' ? `<div class="stop-score"><strong>${state.savedScore}</strong><p>skor sesi</p></div>` : ''}</div><div class="result-details">${savePanelHtml(false)}</div></section>`;
+}
+window.addEventListener('message', event => {
+  const iframe = document.querySelector('#portal-simulation');
+  if (!isPortalMessage(event, { origin: new URL(SIMULATION_PORTAL_URL).origin, source: iframe?.contentWindow, playId: state.playId, gameKey: GAME_KEY_BY_ID[state.game] })) return;
+  if (event.data.type !== 'PEKA_READY') lastInput = performance.now();
+  if (event.data.type === 'PEKA_READY') {
+    iframe.contentWindow.postMessage({ type: 'PEKA_SESSION_INIT', playId: state.playId, gameKey: GAME_KEY_BY_ID[state.game] }, new URL(SIMULATION_PORTAL_URL).origin);
+  } else if (event.data.type === 'PEKA_ACTION') {
+    reportAction(event.data.actionKey, event.data.value);
+  } else if (event.data.type === 'PEKA_COMPLETE') {
+    state.view = 'result';
+    render();
+  }
+});
 function render() {
   document.body.classList.remove('feedback-open');
-  const views = { home, intro, 'stop-play': stopPlay, 'inbox-play': inboxPlay, 'act-scenario': actScenario, 'act-play': actPlay, 'call-play': callPlay, 'redflag-play': redFlagPlay, 'qris-play': qrisPlay, 'report-play': reportPlay, completion, result, debrief };
+  const views = { home, intro, 'portal-play': portalPlay, 'stop-play': stopPlay, 'inbox-play': inboxPlay, 'act-scenario': actScenario, 'act-play': actPlay, 'call-play': callPlay, 'redflag-play': redFlagPlay, 'qris-play': qrisPlay, 'report-play': reportPlay, completion, result, debrief };
   screen.innerHTML = header() + (booth.phase === 'active' ? views[state.view]() : boothStatus()) + footer();
   screen.dataset.view = state.view;
   screen.dataset.game = state.game || 'home';
@@ -263,7 +286,8 @@ async function beginPlay(game, player) {
     pendingActions = [];
     actionFlush = Promise.resolve();
     const shared = { game, playerName: player.nickname, playId: created.playId, saveState: 'playing' };
-    if (game === 'stop') state = { ...shared, view: 'stop-play', rounds, index: 0, answer: null, correct: 0 };
+    if (!['stop', 'act'].includes(game)) state = { ...shared, view: 'portal-play', portal: true };
+    else if (game === 'stop') state = { ...shared, view: 'stop-play', rounds, index: 0, answer: null, correct: 0 };
     else if (game === 'inbox') state = { ...shared, view: 'inbox-play', rounds, index: 0, answer: null, correct: 0 };
     else if (game === 'act') state = { ...shared, view: 'act-scenario', scenario };
     else if (game === 'call') state = { ...shared, view: 'call-play', stage: 'ringing', correct: 0 };
@@ -290,39 +314,45 @@ function choose(game) {
   history.replaceState(null, '', `#${game}`);
   render();
 }
-async function sendPendingActions() {
-  while (pendingActions.length) {
-    const action = pendingActions[0];
+async function sendPendingActions(queue = pendingActions) {
+  while (queue.length) {
+    const { playId, body: action } = queue[0];
     try {
-      await saveAction(boothId, state.playId, action);
+      await saveAction(boothId, playId, action);
     } catch {
       await new Promise(resolve => setTimeout(resolve, 300));
-      await saveAction(boothId, state.playId, action);
+      await saveAction(boothId, playId, action);
     }
-    pendingActions.shift();
+    queue.shift();
   }
 }
 function reportAction(actionKey, value) {
-  pendingActions.push({
+  pendingActions.push({ playId: state.playId, body: {
     gameKey: GAME_KEY_BY_ID[state.game],
     actionKey,
     ...(value === undefined ? {} : { value }),
-  });
-  actionFlush = actionFlush.catch(() => {}).then(sendPendingActions);
+  } });
+  const queue = pendingActions;
+  actionFlush = actionFlush.catch(() => {}).then(() => sendPendingActions(queue));
 }
 async function reportScore(force = false) {
   if (!state.playId || state.saveState === 'saved' || (state.completeStarted && !force)) return;
+  const playId = state.playId;
+  const queue = pendingActions;
   state.completeStarted = true;
   state.saveState = 'saving';
   if (force) render();
   try {
-    await actionFlush;
-    await sendPendingActions();
-    const result = await completePlay(boothId, state.playId);
+    await actionFlush.catch(() => {});
+    await sendPendingActions(queue);
+    if (state.playId !== playId) return;
+    const result = await completePlay(boothId, playId);
+    if (state.playId !== playId) return;
     state.savedScore = result.score;
     state.saveState = 'saved';
     state.saveError = null;
   } catch (error) {
+    if (state.playId !== playId) return;
     state.saveState = 'failed';
     state.saveError = error instanceof Error ? error.message : 'Hasil belum dapat disimpan.';
   }
@@ -403,7 +433,7 @@ document.addEventListener('click', event => {
   if (action === 'choose-qris') choose('qris');
   if (action === 'choose-report') choose('report');
   if (action === 'home') {
-    if (['stop-play', 'inbox-play', 'act-play', 'act-scenario', 'call-play', 'redflag-play', 'qris-play', 'report-play', 'completion'].includes(state.view)) document.querySelector('#reset-dialog').showModal();
+    if (['portal-play', 'stop-play', 'inbox-play', 'act-play', 'act-scenario', 'call-play', 'redflag-play', 'qris-play', 'report-play', 'completion'].includes(state.view)) document.querySelector('#reset-dialog').showModal();
     else goHome();
   }
   if (action === 'reset') document.querySelector('#reset-dialog').showModal();
@@ -586,7 +616,7 @@ setInterval(() => {
     document.querySelector('#debrief-count').textContent = remaining ? `(${remaining})` : '';
     document.querySelector('#finish').disabled = remaining > 0;
   }
-  if (state.view !== 'home' && now - lastInput >= settings.abandonMs) {
+  if (state.view !== 'home' && !['saving', 'failed'].includes(state.saveState) && now - lastInput >= settings.abandonMs) {
     document.querySelectorAll('dialog[open]').forEach(d => d.close()); goHome();
   }
 }, 100);

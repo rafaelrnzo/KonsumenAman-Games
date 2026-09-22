@@ -1,6 +1,6 @@
 # Game Zone Konsumen Aman
 
-Klien layar sentuh untuk Sesi Game Portal Konsumen Aman. Satu deployment menyediakan Stop or Go, Act Fast, Inbox Phishing, Telepon Bodong, Cari Red Flag, Anti QRIS Palsu, dan Cara Lapor. Sesi Game menentukan game mana yang tampil. Link dari admin menentukan sesi dengan query `?boothId=...`.
+Klien layar sentuh untuk Sesi Game Portal Konsumen Aman. Stop or Go dan Act Fast dimainkan di klien ini. Inbox Phishing, Telepon Scam, Cari Red Flag, Anti QRIS Palsu, dan Cara Lapor memakai komponen simulasi asli dari Portal Konsumen Aman di dalam iframe. Sesi Game menentukan game mana yang tampil. Link dari admin menentukan sesi dengan query `?boothId=...`.
 
 ## Alur booth
 
@@ -18,6 +18,7 @@ Buat `public/config.mjs` untuk menunjuk API lokal:
 
 ```js
 export const GAME_API_BASE_URL = "http://localhost:8000";
+export const SIMULATION_PORTAL_URL = "http://localhost:3000";
 ```
 
 Lalu jalankan server statis dari root repo:
@@ -26,7 +27,7 @@ Lalu jalankan server statis dari root repo:
 python3 -m http.server 4176 --bind 127.0.0.1 --directory public
 ```
 
-Buka `http://localhost:4176/?boothId=ID_DARI_ADMIN`. Backend harus mengizinkan origin `http://localhost:4176` saat pengujian lokal.
+Buka `http://localhost:4176/?boothId=ID_DARI_ADMIN`. Backend harus mengizinkan origin `http://localhost:4176` saat pengujian lokal. Jalankan portal dengan `NEXT_PUBLIC_GAME_BOOTH_ORIGIN=http://localhost:4176` agar handshake iframe menerima origin booth lokal.
 
 ## Deploy ke Vercel
 
@@ -34,9 +35,14 @@ Secara default, build production menggunakan API resmi `https://api.shinka-solut
 
 ```text
 GAME_API_BASE_URL=https://alamat-api-produksi
+SIMULATION_PORTAL_URL=https://www.konsumenaman.id
 ```
 
 `npm run build` menulis nilai tersebut ke `public/config.mjs` lalu menjalankan test. Build preview boleh berjalan tanpa nilai ini dan akan menampilkan error konfigurasi saat link dibuka. Vercel melayani folder `public` sesuai `vercel.json`. Domain deployment resmi harus tercantum dalam `CORS_ORIGINS` backend.
+
+Deploy backend dan portal terlebih dahulu, lalu klien booth. Portal harus menyediakan `/simulasi/booth/[id]` dan mengizinkan origin booth melalui `NEXT_PUBLIC_GAME_BOOTH_ORIGIN` (default `https://konsumen-aman-games.vercel.app`). URL portal default adalah `https://www.konsumenaman.id`.
+
+Iframe mengirim pilihan pemain, bukan skor. Klien hanya menerima pesan dari origin portal, frame aktif, dan ID permainan yang cocok. Jawaban dikirim ke API Sesi Game yang sama; hasil masuk leaderboard sesi tersebut. Nama dan ID peserta tetap dikelola klien booth, tidak dimasukkan ke URL iframe. Backend juga menerima penanda akhir tiga ronde Cari Red Flag agar skor parsial saat waktu habis dapat disimpan.
 
 ## Pemeriksaan
 
